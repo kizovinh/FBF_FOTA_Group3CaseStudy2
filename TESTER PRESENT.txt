@@ -1,0 +1,48 @@
+TESTER PRESENT
+    -> 3E 00
+    <- 7E 00
+
+START PROGRAMMING SESSION
+    -> 10 02
+    <- 50 02 00 32 01 F4
+
+SECA UNLOCK
+    seed
+    -> 27 01
+    <- 67 01
+
+    key ???
+    ->
+    <-
+
+ERASE MEM (ASW0)
+    -> 31 01 FF 00 80 08 00 00 80 23 FF FF
+    <- 71 01 FF 00
+
+REQUEST DOWNLOAD
+    -> 34 00 44 80 08 00 00 00 1C 00 00
+    <- 74 20 0F E2
+
+TRANSFER DATA
+    -> 36 01 EF BE AD DE ... (Block 1)
+    <- 76 01
+
+    -> 36 02 AB CD EF ... (Block 2)
+    <- 76 02
+
+    ...
+
+    -> 36 0x AB CD EF ... (Block x)
+    <- 76 0x
+
+REQUEST TRANSFER EXIT
+    -> 37
+    <- 77
+
+VALIDATION MEMMORY
+    -> 31 01 FF 01 80 08 00 00 80 23 FF FF
+    <- 71 01 FF 01
+
+RESET THE SOFTWARE
+    -> 11 01
+    <- 51 01 

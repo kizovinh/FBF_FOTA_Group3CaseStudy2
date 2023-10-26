@@ -118,7 +118,7 @@ with Client(conn, request_timeout=1) as client:                                 
       next_128_bytes = file.read(128)
       print("Next 128 bytes:", next_128_bytes)
    try:
-      esponse = client.transfer_data(sequence_number = 0, data=first_128_bytes)
+      response = client.transfer_data(sequence_number = 0, data=first_128_bytes)
    except:
       a = 0
    response = client.transfer_data(sequence_number = 1, data=next_128_bytes)

@@ -183,7 +183,8 @@ if __name__ == "__main__":
     }
 
     # Link Layer (CAN protocol)
-    bus     = SocketcanBus(channel='can0')
+
+    bus     = SocketcanBus(channel='test')
     tp_addr = isotp.Address(isotp.AddressingMode.NormalFixed_29bits, source_address=0xFA, target_address=0x00)  # Network layer addressing scheme
 
     # Network/Transport layer (IsoTP protocol)

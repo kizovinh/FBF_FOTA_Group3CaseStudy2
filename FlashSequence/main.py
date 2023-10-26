@@ -26,14 +26,21 @@ def readBinFile(filePath):
     except Exception as e:
         debug_print(f"Error: {e}", level = DEBUG)
 
-def hex2bytes(hexString):
+def hex2bytes(hexNum):
     try:
-        # Chuyển đổi chuỗi hex thành dữ liệu bytes
-        byte_data = bytes.fromhex(hexString)
+        byte_data = bytes.fromhex(format(hexNum, 'X'))
         return byte_data
     except ValueError as e:
         debug_print(f"Error: {e}", level = DEBUG)
         return None
+    
+def isSecaBypassed(seed: bytes):
+    for i in range(0, len(seed)):
+        if seed[i] == 0:
+            ...
+        else:
+            return False
+    return True
 
 def unlockECU(client: Client):
     retVal_u8 = E_OK
@@ -54,16 +61,9 @@ def unlockECU(client: Client):
     response = client.unlock_security_access(DCM_SEC_LEVEL_1_2, seed_params = None)
 
     if response.positive:
-        bUnlocked = True
-        data = response.data
+        seed = response.data
 
-        for i in range(0, len(data)):
-            if data[i] == 0:
-                ...
-            else:
-                bUnlocked = False
-
-        if bUnlocked:
+        if isSecaBypassed(seed):
             debug_print("!!!ECU unlocked!!!", level = DEBUG)
         else:
             return E_NOT_OK
@@ -72,10 +72,12 @@ def unlockECU(client: Client):
 
     return retVal_u8
 
-def flashSection(client: Client, section: CodeSection, binFile):
+def flashSection(client: Client, section: CodeSection, binFilePath):
+    binFile = readBinFile(binFilePath)
+    
     ####################################   {section.name}    ######################################
     #Erase {section.name}
-    debug_print(f"Erasing {section.name} from {section.start_address} to {section.end_address}", level = DEBUG)
+    debug_print(f"Erasing {section.name} from {section.start_address} to {section.end_address}...", level = DEBUG)
     
     ReqData = hex2bytes(section.start_address) + hex2bytes(section.end_address)
     
@@ -149,41 +151,28 @@ def flash(client: Client):
 
         return E_NOT_OK
 
-    asw0BinFile = readBinFile("./asw0.bin") 
-    flashSection(client, oAsw0, asw0BinFile)
-
-    asw1BinFile = readBinFile("./asw1.bin") 
-    flashSection(client, oAsw1, asw1BinFile)
-
-    ds0BinFile = readBinFile("./ds0.bin") 
-    flashSection(client, oDs0, ds0BinFile)
+    flashSection(client, oAsw0, "./binInput/asw0.bin")
+    flashSection(client, oAsw1, "./binInput/asw1.bin")
+    flashSection(client, oDs0, "./binInput/ds0.bin")
 
     resetSoftware(client)
 
 if __name__ == "__main__":
     # Refer to isotp documentation for full details about parameters
     isotp_params = {
-        'stmin': 32,    # Will request the sender to wait 32ms between consecutive frame. 0-127ms or 100-900ns with values from 0xF1-0xF9
-        # Request the sender to send 8 consecutives frames before sending a new flow control message
-        'blocksize': 8,
-        'wftmax': 0,     # Number of wait frame allowed before triggering an error
-        # Link layer (CAN layer) works with 8 byte payload (CAN 2.0)
-        'tx_data_length': 8,
-        # 'tx_data_min_length'           : None,  # Minimum length of CAN messages. When different from None, messages are padded to meet this length. Works with CAN 2.0 and CAN FD.
-        'tx_data_min_length': 8,
-        # Will pad all transmitted CAN messages with byte 0x00.
-        'tx_padding': 0,
-        # Triggers a timeout if a flow control is awaited for more than 1000 milliseconds
-        'rx_flowcontrol_timeout': 1000,
-        # Triggers a timeout if a consecutive frame is awaited for more than 1000 milliseconds
-        'rx_consecutive_frame_timeout': 1000,
-        # When sending,                                             respect the stmin requirement of the receiver. If set to True, go as fast as possible.
-        'squash_stmin_requirement': False,
-        'max_frame_size': 4095                # Limit the size of receive frame.
+        'stmin'                       : 32,     # Will request the sender to wait 32ms between consecutive frame. 0-127ms or 100-900ns with values from 0xF1-0xF9
+        'blocksize'                   : 8,      # Request the sender to send 8 consecutives frames before sending a new flow control message
+        'wftmax'                      : 0,      # Number of wait frame allowed before triggering an error
+        'tx_data_length'              : 8,      # Link layer (CAN layer) works with 8 byte payload (CAN 2.0)
+        'tx_data_min_length'          : 8,      # 'tx_data_min_length': None,                                                          # Minimum length of CAN messages. When different from None, messages are padded to meet this length. Works with CAN 2.0 and CAN FD.
+        'tx_padding'                  : 0,      # Will pad all transmitted CAN messages with byte 0x00.
+        'rx_flowcontrol_timeout'      : 1000,   # Triggers a timeout if a flow control is awaited for more than 1000 milliseconds
+        'rx_consecutive_frame_timeout': 1000,   # Triggers a timeout if a consecutive frame is awaited for more than 1000 milliseconds
+        'squash_stmin_requirement'    : False,  # When sending,         respect the stmin requirement of the receiver. If set to True, go as fast as possible.
+        'max_frame_size'              : 4095    # Limit the size of receive frame.
     }
 
     # Link Layer (CAN protocol)
-
     bus     = SocketcanBus(channel='test')
     tp_addr = isotp.Address(isotp.AddressingMode.NormalFixed_29bits, source_address=0xFA, target_address=0x00)  # Network layer addressing scheme
 
@@ -195,6 +184,10 @@ if __name__ == "__main__":
     conn = PythonIsoTpConnection(stack)
 
     with Client(conn, request_timeout = 1) as client:
-        flash(client)
+        if flash(client) == E_OK:
+            ...
+        else:
+            debug_print(f"Flash unsuccessful, please see the logs...", level = DEBUG)
+
 
 

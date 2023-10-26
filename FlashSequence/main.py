@@ -46,6 +46,24 @@ def unlockECU(client: Client):
     retVal_u8 = E_OK
 
     #Check Tester Connection
+    debug_print("Changing Session to DEFAULT SESSION...", level = DEBUG)
+    
+    response = client.change_session(DEFAULT_SESSION)
+
+    if response.positive:
+        debug_print("!!!ECU is in DEFAULT SESSION!!!", level = DEBUG)
+    else:
+        return E_NOT_OK
+    
+    debug_print("Changing Session to PROGRAMMING SESSION...", level = DEBUG)
+    
+    response = client.change_session(SUPPLIER_PROGRAMMING_SESSION)
+
+    if response.positive:
+        debug_print("!!!ECU is in SUPPLIER_PROGRAMMING_SESSION!!!", level = DEBUG)
+    else:
+        return E_NOT_OK
+    
     debug_print("Changing Session to PROGRAMMING SESSION...", level = DEBUG)
     
     response = client.change_session(PROGRAMMING_SESSION)

@@ -86,6 +86,7 @@ def flashSection(client: Client, section: CodeSection, binFilePath):
     if response.positive:
         debug_print(f"!!!{section.name} erased!!!", level = DEBUG)
     else:
+        debug_print(f"!!!{section.name} cannot be erased!!!", level = DEBUG)
         return E_NOT_OK
 
     #Request Download
@@ -97,6 +98,7 @@ def flashSection(client: Client, section: CodeSection, binFilePath):
     if response.positive:
         debug_print(f"!!!Requested for download {section.name} successful!!!", level = DEBUG)
     else:
+        debug_print(f"!!!Requested for download {section.name} unsuccessful!!!", level = DEBUG)
         return E_NOT_OK
     
     #Transfer Data
@@ -110,19 +112,21 @@ def flashSection(client: Client, section: CodeSection, binFilePath):
     for blkId in range(1, numBlockToFlash + 1):
         block_size = lastBlockSize if tempPtr >= (binFileSize - lastBlockSize) else NUM_BYTES_FLASH
 
-        debug_print(f"Flashing {section.name} ({tempPtr} to {tempPtr + block_size})...", level = DEBUG)
         response = client.transfer_data(blkId, binFile[tempPtr : tempPtr + block_size])
 
         if response.positive:
             tempPtr += block_size
         else:
+            debug_print(f"Error while flashing {section.name} ({tempPtr} to {tempPtr + block_size})", level = DEBUG)        
             return E_NOT_OK
     
     #Request transfer exit
     client.request_transfer_exit()
+
     if response.positive:
-            ...
+        debug_print(f"!!!Transfer {section.name} exited!!!", level = DEBUG)        
     else:
+        debug_print(f"Error while exiting transfer {section.name}", level = DEBUG)        
         return E_NOT_OK
 
     #validate the {section.name}
@@ -135,6 +139,7 @@ def flashSection(client: Client, section: CodeSection, binFilePath):
     if response.positive:
         debug_print(f"!!!{section.name} fineeee!!!", level = DEBUG)
     else:
+        debug_print(f"!!!{section.name} validation ERROR!!!", level = DEBUG)
         return E_NOT_OK
 
 def resetSoftware(client:Client):
@@ -146,16 +151,32 @@ def resetSoftware(client:Client):
 
 
 def flash(client: Client):
-    if unlockECU(client) == E_NOT_OK:
-        debug_print("Not able to unlock ECU...", level=DEBUG)
+    retVal_u8 = E_NOT_OK
 
+    # Unlock ECU
+    retVal_u8 = unlockECU(client)
+
+    if retVal_u8 == E_NOT_OK:
+        debug_print("Not able to unlock ECU...", level=DEBUG)
         return E_NOT_OK
 
-    flashSection(client, oAsw0, "./binInput/asw0.bin")
-    flashSection(client, oAsw1, "./binInput/asw1.bin")
-    flashSection(client, oDs0, "./binInput/ds0.bin")
+    #Start Flashing ASW0 + ASW1 + DS0
+    retVal_u8 = flashSection(client, oAsw0, "./binInput/asw0.bin")
+    if retVal_u8 == E_NOT_OK:
+        debug_print("FATAL ERROR WHILE FLASHING ASW0", level=DEBUG)
+        return E_NOT_OK
 
-    resetSoftware(client)
+    retVal_u8 = flashSection(client, oAsw1, "./binInput/asw1.bin")
+    if retVal_u8 == E_NOT_OK:
+        debug_print("FATAL ERROR WHILE FLASHING ASW0", level=DEBUG)
+        return E_NOT_OK
+
+    retVal_u8 = flashSection(client, oDs0, "./binInput/ds0.bin")
+    if retVal_u8 == E_NOT_OK:
+        debug_print("FATAL ERROR WHILE FLASHING ASW0", level=DEBUG)
+        return E_NOT_OK
+
+    return E_OK
 
 if __name__ == "__main__":
     # Refer to isotp documentation for full details about parameters
@@ -185,9 +206,9 @@ if __name__ == "__main__":
 
     with Client(conn, request_timeout = 1) as client:
         if flash(client) == E_OK:
-            ...
+            resetSoftware(client)
         else:
-            debug_print(f"Flash unsuccessful, please see the logs...", level = DEBUG)
+            debug_print(f"Flash unsuccessful, please see the logs above...", level = DEBUG)
 
 
 

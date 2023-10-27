@@ -96,12 +96,7 @@ def unlockECU(client: Client):
     response = client.unlock_security_access(DCM_SEC_LEVEL_1_2, seed_params = None)
 
     if response.positive:
-        seed = response.data
-
-        if isSecaBypassed(seed):
-            debug_print("!!!ECU unlocked!!!", level = DEBUG)
-        else:
-            return E_NOT_OK
+        debug_print("!!!ECU unlocked!!!", level = DEBUG)
     else:
         return E_NOT_OK
 

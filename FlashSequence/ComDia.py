@@ -1,9 +1,9 @@
 from clsCodeSection import CodeSection
 
-DEFAULT_SESSION              = 1
-PROGRAMMING_SESSION          = 2
-EXTENDED_SESSION             = 3
-SUPPLIER_PROGRAMMING_SESSION = 61
+DEFAULT_SESSION              = 0x01
+PROGRAMMING_SESSION          = 0x02
+EXTENDED_SESSION             = 0x03
+SUPPLIER_PROGRAMMING_SESSION = 0x61
 
 E_OK     = 0
 E_NOT_OK = 1

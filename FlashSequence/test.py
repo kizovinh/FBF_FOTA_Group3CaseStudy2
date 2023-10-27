@@ -33,6 +33,6 @@ def readHexFileByAddr(filePath, startAddr, endAddr):
 
 # ReqData = hex2bytes(0x80080000) + hex2bytes(0x8023FFFF)
 
-fileContent = readHexFileByAddr("./FlashSequence/binInput/input.hex", 0x80080000, 0x8023FFFF)
+fileContent = readHexFileByAddr("./FlashSequence/binInput/input.hex", 0x80000000, 0x80000011)
 
 debug_print(fileContent, level=DEBUG)

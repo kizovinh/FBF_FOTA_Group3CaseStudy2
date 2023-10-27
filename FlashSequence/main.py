@@ -42,7 +42,7 @@ if __name__ == "__main__":
         use_server_timing        = False,
         p2_star_timeout          = 4.0,
         p2_timeout               = 4.0,
-        security_algo            = Algo_Seca,
+        security_algo            = FlashBeyondFuture.Algo_Seca,
         security_algo_params     = {},
         server_memorysize_format = 32,
         server_address_format    = 32
@@ -51,8 +51,8 @@ if __name__ == "__main__":
     conn = PythonIsoTpConnection(stack)
     
     with Client(conn, config = client_cfg1 ,request_timeout = None) as client:
-
-        if FlashBeyondFuture.flash(client, FLASH_USING_SINGLE_HEX_FILE) == E_OK:
+        #FLASH_USING_SINGLE_HEX_FILE FLASH_USING_BIN_FILE
+        if FlashBeyondFuture.flash(client, FLASH_USING_BIN_FILE) == E_OK:
             FlashBeyondFuture.resetSoftware(client)
         else:
             debug_print(f"Flash unsuccessful, please see the logs above...", level = DEBUG)

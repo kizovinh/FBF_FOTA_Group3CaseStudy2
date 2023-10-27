@@ -9,6 +9,21 @@ def hex2bytes(hexNum):
         print(f"Error: {e}")
         return None
 
+def readHexFile(filePath):
+    try:
+        ih = IntelHex(filePath)
+
+        extracted_data = bytes(ih.tobinarray())
+
+        return extracted_data
+
+    except FileNotFoundError:
+        debug_print(f"Error: File not found.", level = DEBUG)
+        return None
+    except Exception as e:
+        debug_print(f"Error: {e}", level = DEBUG)
+        return None
+    
 def readHexFileByAddr(filePath, startAddr, endAddr):
     try:
         ih = IntelHex(filePath)
@@ -33,6 +48,6 @@ def readHexFileByAddr(filePath, startAddr, endAddr):
 
 # ReqData = hex2bytes(0x80080000) + hex2bytes(0x8023FFFF)
 
-fileContent = readHexFileByAddr("./FlashSequence/binInput/input.hex", 0x80000000, 0x80000011)
+fileContent = readHexFile("./FlashSequence/binInput/input.hex")
 
 debug_print(fileContent, level=DEBUG)

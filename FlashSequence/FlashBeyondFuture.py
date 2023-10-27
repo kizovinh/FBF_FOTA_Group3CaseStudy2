@@ -21,6 +21,21 @@ def readBinFile(filePath):
     except Exception as e:
         debug_print(f"Error: {e}", level = DEBUG)
 
+def readHexFile(filePath):
+    try:
+        ih = IntelHex(filePath)
+
+        extracted_data = bytes(ih.tobinarray())
+
+        return extracted_data
+
+    except FileNotFoundError:
+        debug_print(f"Error: File not found.", level = DEBUG)
+        return None
+    except Exception as e:
+        debug_print(f"Error: {e}", level = DEBUG)
+        return None
+    
 def readHexFileByAddr(filePath, startAddr, endAddr):
     try:
         ih = IntelHex(filePath)
@@ -37,10 +52,10 @@ def readHexFileByAddr(filePath, startAddr, endAddr):
         return extracted_data
 
     except FileNotFoundError:
-        print("Error: File not found.")
+        debug_print(f"Error: File not found.", level = DEBUG)
         return None
     except Exception as e:
-        print(f"Error: {e}")
+        debug_print(f"Error: {e}", level = DEBUG)
         return None
 
 def hex2bytes(hexNum):
@@ -50,14 +65,6 @@ def hex2bytes(hexNum):
     except ValueError as e:
         debug_print(f"Error: {e}", level = DEBUG)
         return None
-    
-def isSecaBypassed(seed: bytes):
-    for i in range(0, len(seed)):
-        if seed[i] == 0:
-            ...
-        else:
-            return False
-    return True
 
 def unlockECU(client: Client):
     retVal_u8 = E_OK
@@ -105,6 +112,8 @@ def unlockECU(client: Client):
 def flashSection(client: Client, section: CodeSection, flashMode, filePath):
     if flashMode == FLASH_USING_SINGLE_HEX_FILE:
         fileContent = readHexFileByAddr(filePath, section.start_address, section.end_address)
+    elif flashMode == FLASH_USING_SPLITTED_HEX_FILE:
+        fileContent = readHexFile(filePath)
     else:
         fileContent = readBinFile(filePath)
     

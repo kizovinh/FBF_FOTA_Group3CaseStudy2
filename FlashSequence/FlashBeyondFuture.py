@@ -102,6 +102,11 @@ def unlockECU(client: Client):
 
     return retVal_u8
 
+# Dummy SID 27 SEED-KEY algorithm
+def Algo_Seca(level: int ,seed : bytes ,params : dict) ->  bytes:
+    keys = bytes([0 ,0 ,0 ,0])
+    return keys
+    
 def flashSection(client: Client, section: CodeSection, flashMode, filePath):
     if flashMode == FLASH_USING_SINGLE_HEX_FILE:
         fileContent = readHexFileByAddr(filePath, section.start_address, section.end_address)

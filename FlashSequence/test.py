@@ -1,4 +1,5 @@
 from kizoDebug import *
+from intelhex import IntelHex
 
 def hex2bytes(hexNum):
     try:
@@ -8,6 +9,30 @@ def hex2bytes(hexNum):
         print(f"Error: {e}")
         return None
 
-ReqData = hex2bytes(0x80080000) + hex2bytes(0x8023FFFF)
+def readHexFileByAddr(filePath, startAddr, endAddr):
+    try:
+        ih = IntelHex(filePath)
 
-debug_print(ReqData, level=DEBUG)
+        start_index = int(format(startAddr, 'X'), 16)
+        end_index   = int(format(endAddr, 'X'), 16)
+
+        if end_index < start_index:
+            print("Error: End address should be greater than or equal to start address.")
+            return None
+
+        extracted_data = bytes(ih.tobinarray(start=start_index, end=end_index))
+
+        return extracted_data
+
+    except FileNotFoundError:
+        print("Error: File not found.")
+        return None
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
+
+# ReqData = hex2bytes(0x80080000) + hex2bytes(0x8023FFFF)
+
+fileContent = readHexFileByAddr("./FlashSequence/binInput/input.hex", 0x80080000, 0x8023FFFF)
+
+debug_print(fileContent, level=DEBUG)

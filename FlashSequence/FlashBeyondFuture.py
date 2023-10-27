@@ -1,5 +1,6 @@
 from kizoDebug import *
 from ComDia import *
+from intelhex import IntelHex
 
 from udsoncan.client import Client
 import udsoncan
@@ -22,19 +23,18 @@ def readBinFile(filePath):
 
 def readHexFileByAddr(filePath, startAddr, endAddr):
     try:
-        with open(filePath, 'rb') as hex_file:
-            buffer = hex_file.read()
+        ih = IntelHex(filePath)
 
-            start_index = int(startAddr, 16)
-            end_index   = int(endAddr, 16)
+        start_index = int(format(startAddr, 'X'), 16)
+        end_index   = int(format(endAddr, 'X'), 16)
 
-            if end_index < start_index:
-                print("Error: End address should be greater than or equal to start address.")
-                return None
+        if end_index < start_index:
+            print("Error: End address should be greater than or equal to start address.")
+            return None
 
-            extracted_data = buffer[start_index:end_index + 1]
+        extracted_data = bytes(ih.tobinarray(start=start_index, end=end_index))
 
-            return extracted_data
+        return extracted_data
 
     except FileNotFoundError:
         print("Error: File not found.")
@@ -201,9 +201,9 @@ def flash(client: Client, flashMode = FLASH_USING_SINGLE_HEX_FILE):
 
     #Start Flashing ASW0 + ASW1 + DS0
     if flashMode == FLASH_USING_SPLITTED_HEX_FILE:
-        asw0FilePath = "./binInput/asw0.hex"
-        asw1FilePath = "./binInput/asw1.hex"
-        ds0FilePath  = "./binInput/ds0.hex"
+        asw0FilePath = "/binInput/asw0.hex"
+        asw1FilePath = "/binInput/asw1.hex"
+        ds0FilePath  = "/binInput/ds0.hex"
     elif flashMode == FLASH_USING_SINGLE_HEX_FILE:
         asw0FilePath = "./binInput/input.hex"
         asw1FilePath = "./binInput/input.hex"

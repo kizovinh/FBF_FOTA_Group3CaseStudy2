@@ -93,7 +93,7 @@ def unlockECU(client: Client):
     #Unlock Security
     debug_print("Hacking ECU...", level = DEBUG)
     
-    response = client.unlock_security_access(DCM_SEC_LEVEL_1_2, seed_params = None)
+    response = client.unlock_security_access(DCM_SEC_LEVEL_1_2)
 
     if response.positive:
         debug_print("!!!ECU unlocked!!!", level = DEBUG)

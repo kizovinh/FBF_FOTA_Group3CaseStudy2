@@ -100,7 +100,7 @@ def unlockECU(client: Client):
     #Unlock Security
     debug_print("Hacking ECU...", level = DEBUG)
     
-    response = client.unlock_security_access(DCM_SEC_LEVEL_1_2, seed_params = None)
+    response = client.unlock_security_access(DCM_SEC_LEVEL_1_2)
 
     if response.positive:
         debug_print("!!!ECU unlocked!!!", level = DEBUG)
@@ -109,6 +109,11 @@ def unlockECU(client: Client):
 
     return retVal_u8
 
+# Dummy SID 27 SEED-KEY algorithm
+def Algo_Seca(level: int ,seed : bytes ,params : dict) ->  bytes:
+    keys = bytes([0 ,0 ,0 ,0])
+    return keys
+    
 def flashSection(client: Client, section: CodeSection, flashMode, filePath):
     if flashMode == FLASH_USING_SINGLE_HEX_FILE:
         fileContent = readHexFileByAddr(filePath, section.start_address, section.end_address)

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 DEBUG    = 1
 INFO     = 2
 WARNING  = 3
@@ -9,7 +11,8 @@ DEBUG_LEVEL = DEBUG
 
 def debug_print(message, level=1):
     if level >= DEBUG_LEVEL:
-        print(message)
+        now = datetime.now()
+        print(f"[{now:%H:%M:%S}]: {message}")
 
 def debug_write_to_file(message, filename, level=1):
     if level >= DEBUG_LEVEL:

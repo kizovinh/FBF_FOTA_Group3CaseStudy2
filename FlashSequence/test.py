@@ -1,3 +1,5 @@
+from kizoDebug import *
+
 def hex2bytes(hexNum):
     try:
         byte_data = bytes.fromhex(format(hexNum, 'X'))
@@ -8,4 +10,4 @@ def hex2bytes(hexNum):
 
 ReqData = hex2bytes(0x80080000) + hex2bytes(0x8023FFFF)
 
-print(ReqData)
+debug_print(ReqData, level=DEBUG)

@@ -23,7 +23,7 @@ class CodeSection:
 
     @property
     def size(self):
-        return self._end_address
+        return self._size
 
     @size.setter
     def size(self, value):

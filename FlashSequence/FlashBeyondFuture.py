@@ -201,21 +201,21 @@ def flash(client: Client, flashMode = FLASH_USING_SINGLE_HEX_FILE):
 
     #Start Flashing ASW0 + ASW1 + DS0
     if flashMode == FLASH_USING_SPLITTED_HEX_FILE:
-        asw0FilePath = "/binInput/asw0.hex"
-        asw1FilePath = "/binInput/asw1.hex"
-        ds0FilePath  = "/binInput/ds0.hex"
+        asw0FilePath = "./FlashSequence/binInput/asw0.hex"
+        asw1FilePath = "./FlashSequence/binInput/asw1.hex"
+        ds0FilePath  = "./FlashSequence/binInput/ds0.hex"
     elif flashMode == FLASH_USING_SINGLE_HEX_FILE:
-        asw0FilePath = "./binInput/input.hex"
-        asw1FilePath = "./binInput/input.hex"
-        ds0FilePath  = "./binInput/input.hex"
+        asw0FilePath = "./FlashSequence/binInput/input.hex"
+        asw1FilePath = "./FlashSequence/binInput/input.hex"
+        ds0FilePath  = "./FlashSequence/binInput/input.hex"
     elif flashMode == FLASH_USING_BIN_FILE:
-        asw0FilePath = "./binInput/asw0_notCompressed.bin"
-        asw1FilePath = "./binInput/asw1_notCompressed.bin"
-        ds0FilePath  = "./binInput/ds0_notCompressed.bin"
+        asw0FilePath = "./FlashSequence/binInput/asw0_notCompressed.bin"
+        asw1FilePath = "./FlashSequence/binInput/asw1_notCompressed.bin"
+        ds0FilePath  = "./FlashSequence/binInput/ds0_notCompressed.bin"
     elif flashMode == FLASH_USING_COMPRESSED_BIN_FILE:
-        asw0FilePath = "./binInput/asw0.bin"
-        asw1FilePath = "./binInput/asw1.bin"
-        ds0FilePath  = "./binInput/ds0.bin"
+        asw0FilePath = "./FlashSequence/binInput/asw0.bin"
+        asw1FilePath = "./FlashSequence/binInput/asw1.bin"
+        ds0FilePath  = "./FlashSequence/binInput/ds0.bin"
 
     retVal_u8 = flashSection(client, oAsw0, flashMode, asw0FilePath)
     if retVal_u8 == E_NOT_OK:

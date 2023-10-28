@@ -5,7 +5,7 @@ import time
 from udsoncan.client import Client
 import udsoncan
 
-def readBinFile(filePath):
+def readBinFile(filePath) -> bytes:
     try:
         with open(filePath, 'rb') as file:
             buffer = file.read()
@@ -21,7 +21,7 @@ def readBinFile(filePath):
     except Exception as e:
         debug_print(f"Error: {e}", level = DEBUG)
 
-def readHexFile(filePath):
+def readHexFile(filePath) -> bytes:
     try:
         ih = IntelHex(filePath)
 
@@ -36,7 +36,7 @@ def readHexFile(filePath):
         debug_print(f"Error: {e}", level = DEBUG)
         return None
     
-def readHexFileByAddr(filePath, startAddr, endAddr):
+def readHexFileByAddr(filePath, startAddr, endAddr) -> bytes:
     try:
         ih = IntelHex(filePath)
 
@@ -44,7 +44,7 @@ def readHexFileByAddr(filePath, startAddr, endAddr):
         end_index   = int(format(endAddr, 'X'), 16)
 
         if end_index < start_index:
-            print("Error: End address should be greater than or equal to start address.")
+            debug_print(f"Error: End address should be greater than or equal to start address.", level = DEBUG)
             return None
 
         extracted_data = bytes(ih.tobinarray(start=start_index, end=end_index))
@@ -58,7 +58,7 @@ def readHexFileByAddr(filePath, startAddr, endAddr):
         debug_print(f"Error: {e}", level = DEBUG)
         return None
 
-def hex2bytes(hexNum):
+def hex2bytes(hexNum) -> bytes:
     try:
         byte_data = bytes.fromhex(format(hexNum, 'X'))
         return byte_data
@@ -114,7 +114,8 @@ def unlockECU(client: Client):
 def Algo_Seca(level: int ,seed : bytes ,params : dict) ->  bytes:
     keys = bytes([0 ,0 ,0 ,0])
     return keys
-def rtn_chksum (fileContent):
+
+def rtn_chksum(fileContent):
     chkSum = sum (fileContent) & 0xFFFF
     return bytes([(chkSum & 0xFF00) >> 8, chkSum & 0xFF])
     """
@@ -128,6 +129,7 @@ def rtn_chksum (fileContent):
     """   
          
 def flashSection(client: Client, section: CodeSection, flashMode, filePath):
+    #Load file into buffer for flashing
     if flashMode == FLASH_USING_SINGLE_HEX_FILE:
         fileContent = readHexFileByAddr(filePath, section.start_address, section.end_address)
     elif flashMode == FLASH_USING_SPLITTED_HEX_FILE:
@@ -163,16 +165,19 @@ def flashSection(client: Client, section: CodeSection, flashMode, filePath):
     
     #Transfer Data
     debug_print(f"Start flashing {section.name}...", level = DEBUG)
+
     binFileSize     = len(fileContent)
     numBlockToFlash = int(int(binFileSize) / int(NUM_BYTES_FLASH))
     lastBlockSize   = binFileSize % NUM_BYTES_FLASH
     tempPtr         = 0
-    print ("Bin file size " + str(binFileSize))
-    print ("Num bytes flash " + str(NUM_BYTES_FLASH))
-    print ("Number Block to Flash " + str(numBlockToFlash))
-    print ("LastBLIK SIZE " + str(lastBlockSize))
+
+    debug_print(f"Bin file size:             {str(binFileSize)}", level = DEBUG)
+    debug_print(f"Block size:                {str(NUM_BYTES_FLASH)}", level = DEBUG)
+    debug_print(f"Number of Blocks to Flash: {str(numBlockToFlash)}", level = DEBUG)
+    debug_print(f"LastBLK SIZE:              {str(lastBlockSize)}", level = DEBUG)
+
     for blkId in range(1, numBlockToFlash + 2):
-        #print ("BlockID = " + str(blkId & 0xFF))
+        #debug_print("BlockID = {str(blkId & 0xFF)}", level = DEBUG)
         block_size = lastBlockSize if tempPtr >= (binFileSize - lastBlockSize) else NUM_BYTES_FLASH
 
         response = client.transfer_data(blkId & 0xFF, fileContent[tempPtr : tempPtr + block_size])
@@ -192,12 +197,11 @@ def flashSection(client: Client, section: CodeSection, flashMode, filePath):
         debug_print(f"Error while exiting transfer {section.name}", level = DEBUG)        
         return E_NOT_OK
 
-    #binFileSize     = len(fileContent)
     #validate the {section.name}
     debug_print(f"Validating {section.name} from {section.start_address} to {section.end_address}", level = DEBUG)
     
     
-    ReqData = hex2bytes(section.start_address) + hex2bytes(section.end_address) + rtn_chksum (fileContent)
+    ReqData = hex2bytes(section.start_address) + hex2bytes(section.end_address) + rtn_chksum(fileContent)
     
     response = client.start_routine(0xFF01, ReqData)
     

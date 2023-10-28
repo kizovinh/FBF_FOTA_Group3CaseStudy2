@@ -2,3 +2,4 @@
 *.vscode*
 *env*
 *Env*
+test.py

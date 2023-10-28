@@ -16,9 +16,9 @@ from clsCodeSection import CodeSection
 if __name__ == "__main__":
     oAsw0.path = "./binInput/asw0_notCompressed.bin"
     oAsw1.path = "./binInput/asw1_notCompressed.bin"
-    oDs0.path = "./binInput/ds0_notCompressed.bin"
+    oDs0.path  = "./binInput/ds0_notCompressed.bin"
     flash_sections = [oAsw0, oAsw1, oDs0]
-    flash_obj = Flash()
+    flash_obj = Flash(flash_sections)
     flash_status = flash_obj.run()
     if flash_status == E_OK:
         print(" Flash OKKK")

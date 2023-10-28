@@ -1,9 +1,10 @@
 class CodeSection:
-    def __init__(self, start_address, end_address, size, name):
+    def __init__(self, start_address, end_address, size, name, path = None):
         self._start_address = start_address
         self._end_address   = end_address
         self._size          = size
         self._name          = name
+        self._path          = path
 
     @property
     def start_address(self):
@@ -36,3 +37,13 @@ class CodeSection:
     @name.setter
     def name(self, value):
         self._name = value
+        
+    @property
+    def path(self):
+        return self._path
+
+    @path.setter
+    def name(self, value):
+        self._path = value
+        
+    

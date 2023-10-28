@@ -1,14 +1,17 @@
 from kizoDebug import *
 from ComDia import *
-from intelhex import IntelHex
 from clsCodeSection import CodeSection
 
+from can.interfaces.socketcan import SocketcanBus
+from udsoncan.connections import PythonIsoTpConnection
 from udsoncan.client import Client
+from udsoncan.configs import ClientConfig
+from udsoncan.services import *
+import isotp
 import udsoncan
 
 class Flash:
     def __init__(self, flash_sections: List[CodeSection]):
-        # Refer to isotp documentation for full details about parameters
         isotp_params = {
             'stmin'                       : 20,     # Will request the sender to wait 32ms between consecutive frame. 0-127ms or 100-900ns with values from 0xF1-0xF9
             'blocksize'                   : 0,      # Request the sender to send 8 consecutives frames before sending a new flow control message
@@ -28,21 +31,23 @@ class Flash:
         tp_addr = isotp.Address(isotp.AddressingMode.Normal_11bits, txid = 0x6A2, rxid = 0x682)  # Network layer addressing scheme
 
         # Network/Transport layer (IsoTP protocol)
-        stack = isotp.CanStack(bus=bus, address=tp_addr , params = isotp_params)
-        stack.set_sleep_timing(0, 0)
+        self.stack = isotp.CanStack(bus=bus, address=tp_addr , params = isotp_params)
         # Speed First (do not sleep)
+        self.stack.set_sleep_timing(0, 0)
 
         client_cfg = ClientConfig(
             use_server_timing        = False,
             p2_star_timeout          = 4.0,
             p2_timeout               = 4.0,
-            security_algo            = FlashBeyondFuture.Algo_Seca,
+            security_algo            = self.Algo_Seca,
             security_algo_params     = {},
             server_memorysize_format = 32,
             server_address_format    = 32,
             request_timeout = None
             )
-        conn = PythonIsoTpConnection(stack)
+        self.conn = PythonIsoTpConnection(self.stack)
+        self.client = Client(self.conn, config = client_cfg)
+        self.flash_sections = flash_sections
         
     def readBinFile(filePath):
         try:
@@ -59,51 +64,17 @@ class Flash:
             display_message(f"Error: {e}", level = DEBUG)
             return E_NOT_OK
 
-    # def readHexFile(filePath):
-        # try:
-            # ih = IntelHex(filePath)
-            # extracted_data = bytes(ih.tobinarray())
-            # return extracted_data
-        # except FileNotFoundError:
-            # display_message(f"Error: File {filePath} not found.", level = DEBUG)
-            # return E_NOT_OK
-        # except Exception as e:
-            # display_message(f"Error: {e}", level = DEBUG)
-            # return E_NOT_OK
-        
-    # def readHexFileByAddr(filePath, startAddr, endAddr):
-        # try:
-            # ih = IntelHex(filePath)
-            # start_index = int(format(startAddr, 'X'), 16)
-            # end_index   = int(format(endAddr, 'X'), 16)
-            # if end_index < start_index:
-                # print("Error: End address should be greater than or equal to start address.")
-                # return None
-            # extracted_data = bytes(ih.tobinarray(start=start_index, end=end_index))
-            # return extracted_data
-
-        # except FileNotFoundError:
-            # display_message(f"Error: {filePath} File not found.", level = DEBUG)
-            # return E_NOT_OK
-        # except Exception as e:
-            # display_message(f"Error: {e}", level = DEBUG)
-            # return E_NOT_OK
-
     def hex2bytes(hexNum):
-        try:
-            byte_data = bytes.fromhex(format(hexNum, 'X'))
-            return byte_data
-        except ValueError as e:
-            display_message(f"Error: {e}", level = DEBUG)
-            raise
+        byte_data = bytes.fromhex(format(hexNum, 'X'))
+        return byte_data
 
-    def unlockECU(client: Client):
+    def unlockECU(self):
         retVal_u8 = E_OK
 
         #Check Tester Connection
         display_message("Changing Session to DEFAULT SESSION...", level = DEBUG)
         try:
-            response = client.change_session(DEFAULT_SESSION)
+            response = self.client.change_session(DEFAULT_SESSION)
         except Exception as e:
             display_message(f"{e}", level = DEBUG)
             display_message("Cannot change session to DEFAULT SESSION...", level = DEBUG)
@@ -113,16 +84,17 @@ class Flash:
         #Changing Session to SUPPLIER PROGRAMMING SESSION
         display_message("Requesting SUPPLIER PROGRAMMING SESSION SESSION...", level = DEBUG)
         try: 
-            response = client.change_session(SUPPLIER_PROGRAMMING_SESSION)
+            response = self.client.change_session(SUPPLIER_PROGRAMMING_SESSION)
         except Exception as e:
             display_message(f"{e}", level = DEBUG)
             display_message("Cannot change session to SUPPLIER PROGRAMMING SESSION...", level = DEBUG)
             return E_NOT_OK
-        
         display_message("ECU is in SUPPLIER_PROGRAMMING_SESSION!!!", level = DEBUG)
+        
+        #Changing Session to PROGRAMMING SESSION
         display_message("Requesting PROGRAMMING SESSION...", level = DEBUG)
         try:
-            response = client.change_session(PROGRAMMING_SESSION)
+            response = self.client.change_session(PROGRAMMING_SESSION)
             display_message("ECU is in PROGRAMMING SESSION DONE", level = DEBUG)
         except Exception as e:
             display_message(f"{e}", level = DEBUG)
@@ -132,7 +104,7 @@ class Flash:
         #Unlock Security
         display_message("Accessing ECU's security...", level = DEBUG)
         try:
-            response = client.unlock_security_access(DCM_SEC_LEVEL_1_2)
+            response = self.client.unlock_security_access(DCM_SEC_LEVEL_1_2)
             display_message("ECU's security accessed", level = DEBUG)
         except Exception as e:
             display_message(f"{e}", level = DEBUG)
@@ -147,25 +119,19 @@ class Flash:
         return keys
 
     # Calculate checksum
-    def checksum_calc(fileContent):
+    def checksum_calc(fileContent) -> bytes:
         chkSum = sum (fileContent) & 0xFFFF
         return bytes([(chkSum & 0xFF00) >> 8, chkSum & 0xFF])
              
-    def flashSection(client: Client, section: CodeSection, filePath):
-        # if flashMode == FLASH_USING_SINGLE_HEX_FILE:
-            # fileContent = readHexFileByAddr(filePath, section.start_address, section.end_address)
-        # elif flashMode == FLASH_USING_SPLITTED_HEX_FILE:
-            # fileContent = readHexFile(filePath)
-        # else:
-            # fileContent = readBinFile(filePath)
-        fileContent = readBinFile(filePath)
+    def flashSection(self, section: CodeSection):
+        fileContent = self.readBinFile(section.path)
         ####################################   {section.name}    ######################################
         display_message(f"Flashing {section.name} section...", level = DEBUG)
         #Erase {section.name}
         display_message(f"{section.name} section from {section.start_address} to {section.end_address} will be erased ...", level = DEBUG)
-        ReqData = hex2bytes(section.start_address) + hex2bytes(section.end_address)
+        ReqData = self.hex2bytes(section.start_address) + hex2bytes(section.end_address)
         try:
-            response = client.start_routine( 0xFF00, ReqData)
+            response = self.client.start_routine( 0xFF00, ReqData)
             display_message(f"Request erase {section.name} successfull...", level = DEBUG)
         except Exception as e:
             display_message(f"{e}", level = DEBUG)
@@ -176,7 +142,7 @@ class Flash:
         display_message(f"Requesting for download {section.name}...", level = DEBUG)
         ReqData = udsoncan.MemoryLocation(section.start_address, section.size)
         try:
-            response = client.request_download(ReqData)
+            response = self.client.request_download(ReqData)
             display_message(f"Requested for download {section.name} successful", level = DEBUG)
         except Exception as e:
             display_message(f"{e}", level = DEBUG)
@@ -197,7 +163,7 @@ class Flash:
         for blkId in range(1, numBlockToFlash + 2):
             block_size = lastBlockSize if tempPtr >= (binFileSize - lastBlockSize) else NUM_BYTES_FLASH
             try:
-                response = client.transfer_data( (blkId&0xFF), fileContent[tempPtr : tempPtr + block_size])
+                response = self.client.transfer_data( (blkId&0xFF), fileContent[tempPtr : tempPtr + block_size])
                 tempPtr += block_size
             except Exception as e:
                 display_message(f"{e}", level = DEBUG)
@@ -206,7 +172,7 @@ class Flash:
         
         #Request transfer exit
         try:
-            client.request_transfer_exit()
+            self.client.request_transfer_exit()
             display_message(f"!!!Transfer {section.name} exited!!!", level = DEBUG)    
         except Exception as e:
             display_message(f"{e}", level = DEBUG)
@@ -215,68 +181,49 @@ class Flash:
 
         #validate the {section.name}
         display_message(f"Validating flashing {section.name} from {section.start_address} to {section.end_address}", level = DEBUG)
-        ReqData = hex2bytes(section.start_address) + hex2bytes(section.end_address) + rtn_chksum(fileContent)
+        ReqData = hex2bytes(section.start_address) + hex2bytes(section.end_address) + self.checksum_calc(fileContent)
         try:
-            response = client.start_routine(0xFF01, ReqData)
+            response = self.client.start_routine(0xFF01, ReqData)
             display_message(f"Flashing {section.name} validated", level = DEBUG)
         except Exception as e:
             display_message(f"{e}", level = DEBUG)
             display_message(f"{section.name} validation encounters errors", level = DEBUG)
             return E_NOT_OK
 
-    def resetSoftware(client:Client):
+    def resetSoftware(self):
         display_message(f"Flashing completed, resetting the ECU...", level = DEBUG)
         try: 
-            client.ecu_reset(HARDRESET)
+            self.client.ecu_reset(HARDRESET)
+            return E_OK
         except Exception as e:
             display_message(f"{e}", level = DEBUG)
             display_message(f"Cannot reset ECU", level = DEBUG)
+            return E_NOT_OK
 
-
-    def flash(client: Client, flash_sections: List[str]):
+    def flash(self):
         retVal_u8 = E_NOT_OK
         
         # Unlock ECU
-        retVal_u8 = unlockECU(client)
+        retVal_u8 = self.unlockECU(self.client)
 
         if retVal_u8 == E_NOT_OK:
             display_message("Not able to unlock ECU...", level=DEBUG)
             return E_NOT_OK
             
-        #Start Flashing ASW0 + ASW1 + DS0
-        # if flashMode == FLASH_USING_SPLITTED_HEX_FILE:
-            # asw0FilePath = "./binInput/asw0.hex"
-            # asw1FilePath = "./binInput/asw1.hex"
-            # ds0FilePath  = "./binInput/ds0.hex"
-        # elif flashMode == FLASH_USING_SINGLE_HEX_FILE:
-            # asw0FilePath = "./binInput/input.hex"
-            # asw1FilePath = "./binInput/input.hex"
-            # ds0FilePath  = "./binInput/input.hex"
-        # elif flashMode == FLASH_USING_BIN_FILE:
-            # asw0FilePath = "./binInput/asw0_notCompressed.bin"
-            # asw1FilePath = "./binInput/asw1_notCompressed.bin"
-            # ds0FilePath  = "./binInput/ds0_notCompressed.bin"
-        # elif flashMode == FLASH_USING_COMPRESSED_BIN_FILE:
-            # asw0FilePath = "./binInput/asw0.bin"
-            # asw1FilePath = "./binInput/asw1.bin"
-            # ds0FilePath  = "./binInput/ds0.bin"
-        for section in flash_sections:
-            if section == "asw0":
-                filePath = "./binInput/asw0_notCompressed.bin"
-                section: CodeSection = oAsw0
-            elif section == "asw1":
-                filePath = "./binInput/asw1_notCompressed.bin"
-                section: CodeSection = oAsw1
-            elif section == "ds0":
-                filePath  = "./binInput/ds0_notCompressed.bin"
-                section: CodeSection = oDs0
-            else:
-                display_message("This section type is not defined or supported", level=DEBUG)
-            retVal_u8 = flashSection(client, section, filePath)
+        for section in self.flash_sections:
+            retVal_u8 = self.flashSection(section)
             if retVal_u8 == E_NOT_OK:
                 display_message("FATAL ERROR WHILE FLASHING {section}", level=DEBUG)
                 return E_NOT_OK
 
         return E_OK
-    
-    
+
+    def run(self):
+        flash_status = self.flash()
+        if flash_status == E_OK:
+            ecuResetStatus = self.resetSoftware(client)
+            if ecuResetStatus == E_OK:
+                display_message(f"Flashing completed with success.", level = DEBUG)
+        else:
+            display_message(f"Flashing unsuccessful with error, please see the logs above...", level = DEBUG)
+        return E_NOT_OK

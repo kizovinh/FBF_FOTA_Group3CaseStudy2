@@ -43,7 +43,7 @@ class CodeSection:
         return self._path
 
     @path.setter
-    def name(self, value):
+    def path(self, value):
         self._path = value
         
     

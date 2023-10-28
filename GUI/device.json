@@ -1,0 +1,56 @@
+{   
+    "ecu_list": [
+        {
+            "name": "ECU1",
+            "type": "Engine",
+            "server_config": {
+                "device_id": "ID01",
+                "token": "795700dc7ea29dc4b2435631ab217e4d"
+            },
+            "can_config": {
+                "tx_id": "0x198",
+                "rx_id": "0x120"
+            },
+            "sw_info": {
+                "name": null,
+                "version": null,
+                "last_updated": null
+            }
+        },
+        {
+            "name": "ECU2",
+            "type": "ABS",
+            "status": "action",
+            "server_config": {
+                "device_id": "ID2",
+                "token": "623337ab9b71e051e8c52d2816911c8e"
+            },
+            "can_config": {
+                "tx_id": "0x123",
+                "rx_id": "0x132"
+            },
+            "sw_info": {
+                "name": null,
+                "version": null,
+                "last_updated": null
+            }
+        },
+        {
+            "name": "ECU3",
+            "type": "Engine",
+            "server_config": {
+                "device_id": null,
+                "token": null
+            },
+            "can_config": {
+                "tx_id": "0x198",
+                "rx_id": "0x120"
+            },
+            "sw_info": {
+                "name": null,
+                "version": null,
+                "last_updated": null
+            }
+        }
+    ]
+}

@@ -1,6 +1,5 @@
-from kizoDebug import *
 from ComDia import *
-import FlashBeyondFuture
+import UDSflash
 
 from can.interfaces.socketcan import SocketcanBus
 from udsoncan.connections import PythonIsoTpConnection
@@ -9,11 +8,22 @@ from udsoncan.configs import ClientConfig
 from udsoncan.services import *
 import isotp
 import time
+import logging
 
 from clsCodeSection import CodeSection
 
 
 if __name__ == "__main__":
+    #Config for logging 
+    logging.basicConfig(
+        level    = logging.DEBUG,
+        format   = '[%(asctime)s] - %(levelname)-8s : %(message)s',
+        handlers = [
+            logging.FileHandler('./FlashSequence/project.log'),
+            logging.StreamHandler()
+        ]
+    )
+    
     # Refer to isotp documentation for full details about parameters
     isotp_params = {
         'stmin'                       : 20,     # Will request the sender to wait 32ms between consecutive frame. 0-127ms or 100-900ns with values from 0xF1-0xF9
@@ -29,20 +39,20 @@ if __name__ == "__main__":
     }
 
     # Link Layer (CAN protocol)
-    bus     = SocketcanBus(channel='can0')
-    #tp_addr = isotp.Address(isotp.AddressingMode.NormalFixed_29bits, source_address=0xFA, target_address=0x00)  # Network layer addressing scheme
-    tp_addr = isotp.Address(isotp.AddressingMode.Normal_11bits, txid = 0x6A2, rxid = 0x682)  # Network layer addressing scheme
+    bus      = SocketcanBus(channel='can0')
+    tp_addr  = isotp.Address(isotp.AddressingMode.Normal_11bits, txid = TESTER_ADDR, rxid = ECU_ADDR)  # Network layer addressing scheme
 
     # Network/Transport layer (IsoTP protocol)
-    stack = isotp.CanStack(bus=bus, address=tp_addr , params = isotp_params)
-    stack.set_sleep_timing(0, 0)
+    stack = isotp.CanStack(bus = bus, address = tp_addr, params = isotp_params)
+    
     # Speed First (do not sleep)
+    stack.set_sleep_timing(0, 0)
 
     client_cfg1 = ClientConfig(
         use_server_timing        = False,
         p2_star_timeout          = 4.0,
         p2_timeout               = 4.0,
-        security_algo            = FlashBeyondFuture.Algo_Seca,
+        security_algo            = UDSflash.algoSeca,
         security_algo_params     = {},
         server_memorysize_format = 32,
         server_address_format    = 32
@@ -51,11 +61,10 @@ if __name__ == "__main__":
     conn = PythonIsoTpConnection(stack)
     
     with Client(conn, config = client_cfg1 ,request_timeout = None) as client:
-        #FLASH_USING_SINGLE_HEX_FILE FLASH_USING_BIN_FILE
-        if FlashBeyondFuture.flash(client, FLASH_USING_BIN_FILE) == E_OK:
-            FlashBeyondFuture.resetSoftware(client)
+        if UDSflash.flash(client, FLASH_USING_BIN_FILE) == E_OK:
+            UDSflash.resetSoftware(client)
         else:
-            debug_print(f"Flash unsuccessful, please see the logs above...", level = DEBUG)
+            logging.debug(f"Flash unsuccessful, please see the logs above...")
 
 
 

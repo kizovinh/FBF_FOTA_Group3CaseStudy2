@@ -38,6 +38,8 @@ class DDIConnection():
         self._deviceid: str = deviceid
         self._token: str = token
         self._status: str = "idle"
+        self._downloaded = False
+        self._flashed = False
         self.pollUpdate()
     
     def getInfo(self, path=""):
@@ -117,16 +119,18 @@ class DDIConnection():
         response = self.postInfo(path=f"/confirmationBase/{self._confirmActionId}/feedback", feedback=feedbackData)
         print(response.text)
         
-    def handleDeployRequest(self):
+    def closeDeployRequest(self, result):
         feedbackData = {
             "status": {
                 "execution": "closed",
                 "result": {
-                    "finished": 'success',
+                    "finished": result,
                 }
             }
         }
         response = self.postInfo(path=f"/deploymentBase/{self._delployActionId}/feedback", feedback=feedbackData)
+        self._downloaded = False
+        self._flashed = False
         print(response.text)
     
     def getActionInfo(self):
@@ -141,6 +145,15 @@ class DDIConnection():
     def getDownloadInfo(self):
         artifactsData = self.getInfo(f"/deploymentBase/{self._delployActionId}").json()
         pass
+    
+    def getDownloadStatus(self):
+        return self._downloaded
+
+    def getFlashStatus(self):
+        return self._flashed
+    
+    def setFlashStatus(self, status:bool):
+        self._flashed = status
         
     def downloadArtifacts(self):
         artifactsData = self.getInfo(f"/deploymentBase/{self._delployActionId}").json()
@@ -149,6 +162,7 @@ class DDIConnection():
             response = requests.get(artifact["_links"]["download"]["href"])
             with open("./FlashSequence/binInput/" + artifact["filename"], 'wb') as downFile:
                 downFile.write(response.content)
+        self._downloaded = True
         # self.feedback
     
     def getAutoConfirmInfo(self):

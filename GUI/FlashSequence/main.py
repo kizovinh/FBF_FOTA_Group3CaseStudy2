@@ -9,6 +9,7 @@ from udsoncan.configs import ClientConfig
 from udsoncan.services import *
 import isotp
 import time
+import sys
 
 from clsCodeSection import CodeSection
 
@@ -52,10 +53,17 @@ if __name__ == "__main__":
     
     with Client(conn, config = client_cfg1 ,request_timeout = None) as client:
         #FLASH_USING_SINGLE_HEX_FILE FLASH_USING_BIN_FILE
-        if FlashBeyondFuture.flash(client, FLASH_USING_BIN_FILE) == E_OK:
-            FlashBeyondFuture.resetSoftware(client)
-        else:
-            debug_print(f"Flash unsuccessful, please see the logs above...", level = DEBUG)
+        try:
+            flashResult = FlashBeyondFuture.flash(client, FLASH_USING_BIN_FILE)
+            if flashResult == E_OK:
+                FlashBeyondFuture.resetSoftware(client)
+                print_write_file(f"Flash successful...", level = DEBUG)
+                sys.exit(0)
+            else:
+                print_write_file(f"Flash unsuccessful hihi, please see the logs above...", level = DEBUG)
+        except Exception as e:
+            print_write_file(f"Flash unsuccessful, please see the logs above...", level = DEBUG)
+            sys.exit(1)
 
 
 

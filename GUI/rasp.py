@@ -1,11 +1,13 @@
 import PyQt5.QtCore as QtCore
+import subprocess
 
 from PyQt5.QtCore import (
     Qt,
     QParallelAnimationGroup,
     QPropertyAnimation,
     QAbstractAnimation,
-    QSize
+    QSize,
+    QTimer
 )
 
 from PyQt5.QtWidgets import (
@@ -45,6 +47,7 @@ import logging
 __version__ = "1.0"
 
 class GatewayWindow(QMainWindow):
+    _updateTime = 10000
     config_path = "device.json"
     nullECU = {'name': None, 'type': None, 
                'can_config': {'rx_id': None, 'tx_id': None}, 
@@ -60,12 +63,15 @@ class GatewayWindow(QMainWindow):
         self._ecuConnectionList = []
         self.setWindowTitle(f"FOTA v{__version__}")
         self.setWindowIcon(QIcon("fota.png"))
+        self.timerUpdate = QTimer(self)
+        self.timerUpdate.setInterval(self._updateTime)
         
         self._mainSplitter = QSplitter(Qt.Orientation.Vertical, self)
         self._loadLatestConfig()
         self._addECUList()
         self._addECUInfo()
         self._addConnection()
+        self.timerUpdate.start()
         
         self.setCentralWidget(self._mainSplitter)
         # self.setLayout(self._mainlayout)
@@ -80,6 +86,13 @@ class GatewayWindow(QMainWindow):
     
     def _addConnection(self):
         self._ecuListWidget.ecuListWidget.currentRowChanged.connect(self._updateInfoView)
+        self.timerUpdate.timeout.connect(self._updateInfoCyclic)
+        
+    def _updateInfoCyclic(self):
+        index = self._ecuListWidget.ecuListWidget.currentRow()
+        if index != -1:
+            self._ecuConnectionList[index].pollUpdate()
+            self._ecuInfoWidget.updateView(self._ecuList[index], self._ecuConnectionList[index])
     
     def _updateInfoView(self, index):
         if index != -1 and index < len(self._ecuList):
@@ -158,6 +171,25 @@ class ECUInfoWidget(QTabWidget):
                 self._downloadBtn = QPushButton("Download")
                 sublayout.addWidget(self._downloadBtn)
                 self._downloadBtn.clicked.connect(self._ecuConnection.downloadArtifacts)
+                if not self._ecuConnection.getDownloadStatus():
+                    self._ecuConnection.downloadArtifacts()
+                    flashRet = subprocess.run("./runFlash.sh")
+                    # Flashing code #
+                    #flashProcess = subprocess.Popen(["lxterminal", "-e", "python", "./FlashSequence/main.py"]) #"./runFlash.sh"])
+                    #returncode = flashProcess.wait()
+                    
+                    if flashRet.returncode == 0:
+                        self._ecuConnection.closeDeployRequest("success")
+                        print("success")
+                    else:
+                        self._ecuConnection.closeDeployRequest("failure")
+                        print("failure")
+                        
+                    self._downloadBtn.setText("Downloaded")
+                    self._downloadBtn.setEnabled(False)
+                else:
+                    self._downloadBtn.setText("Downloaded")
+                    self._downloadBtn.setEnabled(False)
                 self.notiLayout.addLayout(sublayout)
             elif self._ecuConnection.getStatus() == "Canceled":
                 sublayout = QHBoxLayout()

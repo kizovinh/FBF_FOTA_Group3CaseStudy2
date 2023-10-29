@@ -1,7 +1,11 @@
 import PySide6.QtCore as QtCore
 
 from PySide6.QtCore import (
-    Qt
+    Qt,
+    QParallelAnimationGroup,
+    QPropertyAnimation,
+    QAbstractAnimation,
+    QSize
 )
 
 from PySide6.QtWidgets import (
@@ -21,7 +25,8 @@ from PySide6.QtWidgets import (
 from PySide6.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
-    QFormLayout
+    QFormLayout,
+    QLayout
 )
 
 from PySide6.QtGui import (
@@ -70,7 +75,7 @@ class GatewayWindow(QMainWindow):
         self._mainSplitter.addWidget(self._ecuListWidget)
         
     def _addECUInfo(self):
-        self._ecuInfoWidget = ECUInfoWidget(self.nullECU)
+        self._ecuInfoWidget = ECUInfoWidget(self._ecuList[0], )
         self._mainSplitter.addWidget(self._ecuInfoWidget)
     
     def _addConnection(self):
@@ -127,7 +132,49 @@ class ECUInfoWidget(QTabWidget):
         self.canTxIdInput.setText(self._ecuInfo['can_config']['tx_id'])   
         self.deviceIdInput.setText(self._ecuInfo['server_config']['device_id'])
         self.tokenInput.setText(self._ecuInfo['server_config']['token'])
-
+        self.updateNotification()
+    
+    def clearLayout(self, layout: QLayout):
+        print(layout.count())
+        for i in reversed(range(layout.count())): 
+            layoutItem = layout.itemAt(i)
+            if layoutItem.widget() is not None:
+                widgetToRemove = layoutItem.widget()
+                widgetToRemove.setParent(None)
+                layout.removeWidget(widgetToRemove)
+            elif layoutItem.spacerItem() is not None:
+                layout.removeItem(layoutItem)
+            else:
+                layoutToRemove = layout.itemAt(i)
+                self.clearLayout(layoutToRemove)
+            
+    def updateNotification(self):
+        self.clearLayout(self.notiLayout)
+        if self._ecuConnection is not None:
+            if self._ecuConnection.getStatus() == "Deployed":
+                sublayout = QHBoxLayout()
+                sublayout.addWidget(QLabel("There is new update for this device"))
+                sublayout.addStretch()
+                self._downloadBtn = QPushButton("Download")
+                sublayout.addWidget(self._downloadBtn)
+                self._downloadBtn.clicked.connect(self._ecuConnection.downloadArtifacts)
+                self.notiLayout.addLayout(sublayout)
+            elif self._ecuConnection.getStatus() == "Canceled":
+                sublayout = QHBoxLayout()
+                sublayout.addWidget(QLabel("Cancel update request for this device"))
+                sublayout.addStretch()
+                cancelBtn = QPushButton("Cancel")
+                sublayout.addWidget(cancelBtn)
+                cancelBtn.clicked.connect(self._ecuConnection.handleCancelRequest)
+                self.notiLayout.addLayout(sublayout)
+            else:
+                self.notiLayout.addWidget(QLabel("No update is available"))
+            self.notiLayout.addStretch()
+        else:
+            self.notiLayout.addWidget(QLabel("No update is available"))
+            self.notiLayout.addStretch()
+        
+    
     def _addStatusWidget(self):
         self.generalInfoWidget = QWidget()
         layout = QVBoxLayout()
@@ -173,11 +220,9 @@ class ECUInfoWidget(QTabWidget):
         
     def _addNotificationWidget(self):
         self.notifWidget = QWidget()
-        layout = QVBoxLayout()
-        if True:
-            layout.addWidget(QLabel("No update is available"))
-            layout.addStretch()
-        self.notifWidget.setLayout(layout)
+        self.notiLayout = QVBoxLayout()
+        self.updateNotification()
+        self.notifWidget.setLayout(self.notiLayout)
         self.addTab(self.notifWidget, "Notification")
 
 class ECUListWidget(QWidget):
@@ -241,10 +286,10 @@ class ECUListWidget(QWidget):
         
     def _addNewECU(self):
         dialog = NewECUCreationDlg()
-        dialog.exec()
-        ecuinfo = dialog.getECUInfo()
-        self._ecuList.append(ecuinfo)
-        self.ecuListWidget.addItem(ecuinfo["name"])
+        if dialog.exec():
+            ecuinfo = dialog.getECUInfo()
+            self._ecuList.append(ecuinfo)
+            self.ecuListWidget.addItem(ecuinfo["name"])
         
     def _refreshECU(self):
         pass
@@ -285,7 +330,7 @@ class NewECUCreationDlg(QDialog):
         self._mainlayout.addWidget(configServerBox)
         
         self.createBtn = QPushButton("Create")
-        self.createBtn.clicked.connect(self.close)
+        self.createBtn.clicked.connect(self.accept)
         self._mainlayout.addWidget(self.createBtn)
         self.setLayout(self._mainlayout)
     
@@ -301,8 +346,6 @@ class NewECUCreationDlg(QDialog):
         ecuInfo["server_config"]["token"] = self.tokenInput.text()
         return ecuInfo
         
-        
-
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     raspWindow = GatewayWindow()

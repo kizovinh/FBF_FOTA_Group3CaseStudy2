@@ -11,6 +11,37 @@ def readBinFile(filePath) -> bytes:
         print_write_file(f"File Size: {file_size} bytes", level = DEBUG)
         return buffer
 
+def readHexFile(filePath) -> bytes:
+    try:
+        ih = IntelHex(filePath)
+        extracted_data = bytes(ih.tobinarray())
+        return extracted_data
+
+    except FileNotFoundError:
+        debug_print(f"Error: File not found.", level = DEBUG)
+        return None
+    except Exception as e:
+        debug_print(f"Error: {e}", level = DEBUG)
+        return None
+    
+def readHexFileByAddr(filePath, startAddr, endAddr) -> bytes:
+    try:
+        ih = IntelHex(filePath)
+        start_index = int(format(startAddr, 'X'), 16)
+        end_index   = int(format(endAddr, 'X'), 16)
+        if end_index < start_index:
+            debug_print(f"Error: End address should be greater than or equal to start address.", level = DEBUG)
+            return None
+        extracted_data = bytes(ih.tobinarray(start=start_index, end=end_index))
+        return extracted_data
+
+    except FileNotFoundError:
+        debug_print(f"Error: File not found.", level = DEBUG)
+        return None
+    except Exception as e:
+        debug_print(f"Error: {e}", level = DEBUG)
+        return None
+        
 def hex2bytes(hexNum) -> bytes:
     byte_data = bytes.fromhex(format(hexNum, 'X'))
     return byte_data
@@ -75,14 +106,19 @@ def flashSection(client: Client, section: CodeSection, flashMode, filePath):
     
     #Load file into buffer for flashing
     try:
-        fileContent = readBinFile(filePath)
+        if flashMode == FLASH_USING_SINGLE_HEX_FILE:
+            fileContent = readHexFileByAddr(filePath, section.start_address, section.end_address)
+        elif flashMode == FLASH_USING_SPLITTED_HEX_FILE:
+            fileContent = readHexFile(filePath)
+        else:
+            fileContent = readBinFile(filePath)
     except Exception as e:
         print_write_file(f"Cannot find {filePath}", level = ERROR)
         return E_NOT_OK
     
     ####################################   {section.name}    ######################################
     #Erase {section.name}
-    print_write_file(f"Erasing {section.name} from {section.start_address} to {section.end_address}...", level = DEBUG)
+    print_write_file(f"Erasing {section.name} from {hex(section.start_address)} to {hex(section.end_address)}...", level = DEBUG)
     try:
         ReqData = hex2bytes(section.start_address) + hex2bytes(section.end_address)
     except Exception as e:
@@ -129,8 +165,8 @@ def flashSection(client: Client, section: CodeSection, flashMode, filePath):
             response = client.transfer_data(blkId & 0xFF, fileContent[tempPtr : tempPtr + block_size])
             tempPtr += block_size
             # Calculate % flashed with gap 
-            flashing_percentage = 100 - float(tempPtr/binFileSize) #flashing_percentage if ((100 - float(tempPtr/binFileSize) - flashing_percentage) < 2) else 100 - float(tempPtr/binFileSize)
-            print_write_file(f"{section.name} flashed {flashing_percentage}", level = INFO)
+            flashing_percentage = 100 - float(tempPtr/binFileSize)*100 #flashing_percentage if ((100 - float(tempPtr/binFileSize) - flashing_percentage) < 2) else 100 - float(tempPtr/binFileSize)
+            print_debug(f"{section.name} flashed {flashing_percentage}", level = INFO)
         except Exception as e:
             print_write_file(f"{e}", level = INFO)
             print_write_file(f"Error while flashing {section.name} ({tempPtr} to {tempPtr + block_size})", level = ERROR)
@@ -186,10 +222,24 @@ def flash(client: Client, flashMode = FLASH_USING_SINGLE_HEX_FILE):
         return E_NOT_OK
 
     #Start Flashing ASW0 + ASW1 + DS0
-    asw0FilePath = "./FlashSequence/binInput/Old/asw0_notCompressed.bin"
-    asw1FilePath = "./FlashSequence/binInput/Old/asw1_notCompressed.bin"
-    ds0FilePath  = "./FlashSequence/binInput/Old/ds0_notCompressed.bin"
 
+    if flashMode == FLASH_USING_SPLITTED_HEX_FILE:
+        asw0FilePath = "./binInput/asw0.hex"
+        asw1FilePath = "./binInput/asw1.hex"
+        ds0FilePath  = "./binInput/ds0.hex"
+    elif flashMode == FLASH_USING_SINGLE_HEX_FILE:
+        asw0FilePath = "./binInput/input.hex"
+        asw1FilePath = "./binInput/input.hex"
+        ds0FilePath  = "./binInput/input.hex"
+    elif flashMode == FLASH_USING_BIN_FILE:
+        asw0FilePath = "./FlashSequence/binInput/Old/asw0_notCompressed.bin"
+        asw1FilePath = "./FlashSequence/binInput/Old/asw1_notCompressed.bin"
+        ds0FilePath  = "./FlashSequence/binInput/Old/ds0_notCompressed.bin"
+    elif flashMode == FLASH_USING_COMPRESSED_BIN_FILE:
+        asw0FilePath = "./binInput/asw0.bin"
+        asw1FilePath = "./binInput/asw1.bin"
+        ds0FilePath  = "./binInput/ds0.bin"
+        
     print_write_file(f"Required configuration completed", level = INFO)
     print_write_file(f"Start flashing sequence..", level = INFO)
     print_write_file(f"        ", level = INFO)

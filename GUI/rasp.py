@@ -1,6 +1,6 @@
-import PySide6.QtCore as QtCore
+import PyQt5.QtCore as QtCore
 
-from PySide6.QtCore import (
+from PyQt5.QtCore import (
     Qt,
     QParallelAnimationGroup,
     QPropertyAnimation,
@@ -8,7 +8,7 @@ from PySide6.QtCore import (
     QSize
 )
 
-from PySide6.QtWidgets import (
+from PyQt5.QtWidgets import (
     QApplication,
     QLabel,
     QMainWindow,
@@ -22,14 +22,14 @@ from PySide6.QtWidgets import (
     QDialog, QGroupBox
 )
 
-from PySide6.QtWidgets import (
+from PyQt5.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
     QFormLayout,
     QLayout
 )
 
-from PySide6.QtGui import (
+from PyQt5.QtGui import (
     QIcon,
     QKeySequence,
 )

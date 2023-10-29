@@ -37,6 +37,7 @@ def readHexFile(filePath) -> bytes:
         return None
     
 def readHexFileByAddr(filePath, startAddr, endAddr) -> bytes:
+    response = client.tester_present()
     try:
         ih = IntelHex(filePath)
 
@@ -47,6 +48,7 @@ def readHexFileByAddr(filePath, startAddr, endAddr) -> bytes:
             debug_print(f"Error: End address should be greater than or equal to start address.", level = DEBUG)
             return None
 
+        response = client.tester_present()
         extracted_data = bytes(ih.tobinarray(start=start_index, end=end_index))
 
         return extracted_data
@@ -129,6 +131,10 @@ def rtn_chksum(fileContent):
     """   
          
 def flashSection(client: Client, section: CodeSection, flashMode, filePath):
+    debug_print(f"*******************************************************************************", level = DEBUG)
+    debug_print(f"*********************** Flash {section.name} ********************************************", level = DEBUG)
+    debug_print(f"*******************************************************************************", level = DEBUG)
+    
     #Load file into buffer for flashing
     if flashMode == FLASH_USING_SINGLE_HEX_FILE:
         fileContent = readHexFileByAddr(filePath, section.start_address, section.end_address)
@@ -189,7 +195,7 @@ def flashSection(client: Client, section: CodeSection, flashMode, filePath):
             return E_NOT_OK
     
     #Request transfer exit
-    client.request_transfer_exit()
+    response = client.request_transfer_exit()
 
     if response.positive:
         debug_print(f"!!!Transfer {section.name} exited!!!", level = DEBUG)        
@@ -240,9 +246,10 @@ def flash(client: Client, flashMode = FLASH_USING_SINGLE_HEX_FILE):
         asw1FilePath = "./binInput/input.hex"
         ds0FilePath  = "./binInput/input.hex"
     elif flashMode == FLASH_USING_BIN_FILE:
-        asw0FilePath = "./binInput/asw0_notCompressed.bin"
-        asw1FilePath = "./binInput/asw1_notCompressed.bin"
-        ds0FilePath  = "./binInput/ds0_notCompressed.bin"
+        #/home/fbf/FBF_FOTA_Group3CaseStudy2/GUI/FlashSequence/binInput/Old/asw0_notCompressed.bin
+        asw0FilePath = "./binInput/Old/asw0_notCompressed.bin"
+        asw1FilePath = "./binInput/Old/asw1_notCompressed.bin"
+        ds0FilePath  = "./binInput/Old/ds0_notCompressed.bin"
     elif flashMode == FLASH_USING_COMPRESSED_BIN_FILE:
         asw0FilePath = "./binInput/asw0.bin"
         asw1FilePath = "./binInput/asw1.bin"
@@ -255,12 +262,12 @@ def flash(client: Client, flashMode = FLASH_USING_SINGLE_HEX_FILE):
 
     retVal_u8 = flashSection(client, oAsw1, flashMode, asw1FilePath)
     if retVal_u8 == E_NOT_OK:
-        debug_print("FATAL ERROR WHILE FLASHING ASW0", level=DEBUG)
+        debug_print("FATAL ERROR WHILE FLASHING ASW1", level=DEBUG)
         return E_NOT_OK
 
     retVal_u8 = flashSection(client, oDs0, flashMode, ds0FilePath)
     if retVal_u8 == E_NOT_OK:
-        debug_print("FATAL ERROR WHILE FLASHING ASW0", level=DEBUG)
+        debug_print("FATAL ERROR WHILE FLASHING DS0", level=DEBUG)
         return E_NOT_OK
 
     return E_OK

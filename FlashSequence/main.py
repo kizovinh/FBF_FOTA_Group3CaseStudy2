@@ -16,7 +16,7 @@ from clsCodeSection import CodeSection
 if __name__ == "__main__":
     #Config for logging 
     logging.basicConfig(
-        level    = logging.DEBUG,
+        level    = logging.INFO,
         format   = '[%(asctime)s] - %(levelname)-8s : %(message)s',
         handlers = [
             logging.FileHandler('./FlashSequence/project.log'),
@@ -64,7 +64,7 @@ if __name__ == "__main__":
         if UDSflash.flash(client, FLASH_USING_BIN_FILE) == E_OK:
             UDSflash.resetSoftware(client)
         else:
-            logging.debug(f"Flash unsuccessful, please see the logs above...")
+            logging.info(f"Flash unsuccessful, please see the logs above...")
 
 
 

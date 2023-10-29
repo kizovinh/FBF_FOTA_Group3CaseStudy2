@@ -10,7 +10,7 @@ ERROR    = 4
 IS_DEBUGGING = False 
 
 # This function is used to print message 
-def print_debug(message, level=1):
+def print_debug(message, level):
     now = datetime.now()
     if level == ERROR:
         print(f"[{now:%H:%M:%S}]:  ERROR  : {message}")
@@ -22,10 +22,11 @@ def print_debug(message, level=1):
         print(f"[{now:%H:%M:%S}]:  {message}")
         
 # This function is used to write message to log file 
-def debug_write_to_file(message, level=1):
-    now = datetime.now().strftime("%Y%m%d_%H")
+def debug_write_to_file(message, level):
+    log_date = datetime.now().strftime("%Y%m%d_%H")
+    now = datetime.now()
     dir_path = "/home/fbf/FBF_FOTA_Group3CaseStudy2/GUI/Logs"
-    logfile_name = "%s/%s_log.log" % (dir_path, now)
+    logfile_name = "%s/%s_log.log" % (dir_path, log_date)
     with open(logfile_name, 'a') as file:
         if level == ERROR:
             logging_content = f"[{now:%H:%M:%S}]:  ERROR  : {message}"
@@ -41,6 +42,6 @@ def debug_write_to_file(message, level=1):
             file.write(logging_content + '\n')
             
 # This function is used to print and write message to log file 
-def print_write_file(message, level=1):
+def print_write_file(message, level):
     print_debug(message, level)
     debug_write_to_file(message, level)

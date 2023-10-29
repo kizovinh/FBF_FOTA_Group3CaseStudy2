@@ -77,7 +77,7 @@ def flashSection(client: Client, section: CodeSection, flashMode, filePath):
     try:
         fileContent = readBinFile(filePath)
     except Exception as e:
-        print_write_file(f"ERROR: Cannot find {filePath}", level = ERROR)
+        print_write_file(f"Cannot find {filePath}", level = ERROR)
         return E_NOT_OK
     
     ####################################   {section.name}    ######################################
@@ -86,7 +86,7 @@ def flashSection(client: Client, section: CodeSection, flashMode, filePath):
     try:
         ReqData = hex2bytes(section.start_address) + hex2bytes(section.end_address)
     except Exception as e:
-        print_write_file(f"Error: {e}", level = ERROR)
+        print_write_file(f"{e}", level = ERROR)
         return E_NOT_OK
         
     # Resquest erase section
@@ -170,7 +170,7 @@ def resetSoftware(client:Client):
         client.ecu_reset(HARDRESET)
     except Exception as e:
         print_write_file(f"{e}", level = INFO)
-        print_write_file(f"WARNING: {section.name} Cannot reset ECU!!!", level = ERROR)
+        print_write_file(f"Cannot reset ECU!!!", level = WARNING)
     print_write_file(f"New software flashed successfully!!!", level = DEBUG)
     
     return E_OK

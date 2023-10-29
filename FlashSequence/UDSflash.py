@@ -57,15 +57,15 @@ class Flash:
                 buffer    = file.read()
                 file_size = len(buffer)
 
-                logging.debug(f"File Size: {file_size} bytes")
+                logging.info(f"File Size: {file_size} bytes")
 
                 return buffer
 
         except FileNotFoundError:
-            logging.debug(f"File not found: {filePath}")
+            logging.info(f"File not found: {filePath}")
             return E_NOT_OK
         except Exception as e:
-            logging.debug(f"Error: {e}")
+            logging.info(f"Error: {e}")
             return E_NOT_OK
 
     def hex2bytes(hexNum) -> bytes:
@@ -76,45 +76,45 @@ class Flash:
         retVal_u8 = E_OK
 
         #Check Tester Connection
-        logging.debug("Changing Session to DEFAULT SESSION...")
+        logging.info("Changing Session to DEFAULT SESSION...")
         try:
             response = self.client.change_session(DEFAULT_SESSION)
         except Exception as e:
-            logging.debug(f"{e}")
-            logging.debug("Cannot change session to DEFAULT SESSION...")
+            logging.info(f"{e}")
+            logging.info("Cannot change session to DEFAULT SESSION...")
             return E_NOT_OK
             
-        logging.debug("!!!ECU is in DEFAULT SESSION!!!")
+        logging.info("!!!ECU is in DEFAULT SESSION!!!")
 
         #Changing Session to SUPPLIER PROGRAMMING SESSION
-        logging.debug("Requesting SUPPLIER PROGRAMMING SESSION SESSION...")
+        logging.info("Requesting SUPPLIER PROGRAMMING SESSION SESSION...")
         try: 
             response = self.client.change_session(SUPPLIER_PROGRAMMING_SESSION)
         except Exception as e:
-            logging.debug(f"{e}")
-            logging.debug("Cannot change session to SUPPLIER PROGRAMMING SESSION...")
+            logging.info(f"{e}")
+            logging.info("Cannot change session to SUPPLIER PROGRAMMING SESSION...")
             return E_NOT_OK
-        logging.debug("ECU is in SUPPLIER_PROGRAMMING_SESSION!!!")
+        logging.info("ECU is in SUPPLIER_PROGRAMMING_SESSION!!!")
         
         time.sleep(1)
         #Changing Session to PROGRAMMING SESSION
-        logging.debug("Requesting PROGRAMMING SESSION...")
+        logging.info("Requesting PROGRAMMING SESSION...")
         try:
             response = self.client.change_session(PROGRAMMING_SESSION)
-            logging.debug("ECU is in PROGRAMMING SESSION DONE")
+            logging.info("ECU is in PROGRAMMING SESSION DONE")
         except Exception as e:
-            logging.debug(f"{e}")
-            logging.debug("Cannot change session to PROGRAMMING SESSION...")
+            logging.info(f"{e}")
+            logging.info("Cannot change session to PROGRAMMING SESSION...")
             return E_NOT_OK
 
         #Unlock Security
-        logging.debug("Accessing ECU's security...")
+        logging.info("Accessing ECU's security...")
         try:
             response = self.client.unlock_security_access(DCM_SEC_LEVEL_1_2)
-            logging.debug("ECU's security accessed")
+            logging.info("ECU's security accessed")
         except Exception as e:
-            logging.debug(f"{e}")
-            logging.debug("Cannot access ECU's security")
+            logging.info(f"{e}")
+            logging.info("Cannot access ECU's security")
             return E_NOT_OK
 
         return retVal_u8
@@ -133,42 +133,42 @@ class Flash:
         fileContent = self.readBinFile(section.path)
 
         ####################################   {section.name}    ######################################
-        logging.debug(f"Flashing {section.name} section...")
+        logging.info(f"Flashing {section.name} section...")
 
         #Erase {section.name}
-        logging.debug(f"{section.name} section from {section.start_address} to {section.end_address} will be erased ...")
+        logging.info(f"{section.name} section from {section.start_address} to {section.end_address} will be erased ...")
         ReqData = self.hex2bytes(section.start_address) + self.hex2bytes(section.end_address)
         try:
             response = self.client.start_routine( 0xFF00, ReqData)
-            logging.debug(f"Request erase {section.name} successful...")
+            logging.info(f"Request erase {section.name} successful...")
         except Exception as e:
-            logging.debug(f"{e}")
-            logging.debug(f"Request erase {section.name} unsuccessful !")
+            logging.info(f"{e}")
+            logging.info(f"Request erase {section.name} unsuccessful !")
             return E_NOT_OK
 
         #Request Download
-        logging.debug(f"Requesting for download {section.name}...")
+        logging.info(f"Requesting for download {section.name}...")
         ReqData = udsoncan.MemoryLocation(section.start_address, section.size)
         try:
             response = self.client.request_download(ReqData)
-            logging.debug(f"Requested for download {section.name} successful")
+            logging.info(f"Requested for download {section.name} successful")
         except Exception as e:
-            logging.debug(f"{e}")
-            logging.debug(f"Requested for download {section.name} unsuccessful!!!")
+            logging.info(f"{e}")
+            logging.info(f"Requested for download {section.name} unsuccessful!!!")
             return E_NOT_OK
         
         #Transfer Data
-        logging.debug(f"Start flashing {section.name}...")
+        logging.info(f"Start flashing {section.name}...")
 
         binFileSize     = len(fileContent)
         numBlockToFlash = int(int(binFileSize) / int(NUM_BYTES_FLASH))
         lastBlockSize   = binFileSize % NUM_BYTES_FLASH
         tempPtr         = 0
 
-        logging.debug("Bin file size will be flashed:" + str(binFileSize))
-        logging.debug("Num bytes flash " + str(NUM_BYTES_FLASH))
-        logging.debug("Number Block to Flash " + str(numBlockToFlash))
-        logging.debug("LastBLIK SIZE " + str(lastBlockSize))
+        logging.info("Bin file size will be flashed:" + str(binFileSize))
+        logging.info("Num bytes flash " + str(NUM_BYTES_FLASH))
+        logging.info("Number Block to Flash " + str(numBlockToFlash))
+        logging.info("LastBLIK SIZE " + str(lastBlockSize))
         
         for blkId in range(1, numBlockToFlash + 2):
             block_size = lastBlockSize if tempPtr >= (binFileSize - lastBlockSize) else NUM_BYTES_FLASH
@@ -176,38 +176,38 @@ class Flash:
                 response  = self.client.transfer_data( (blkId&0xFF), fileContent[tempPtr : tempPtr + block_size])
                 tempPtr  += block_size
             except Exception as e:
-                logging.debug(f"{e}")
-                logging.debug(f"Error while flashing {section.name} ({tempPtr} to {tempPtr + block_size})")        
+                logging.info(f"{e}")
+                logging.info(f"Error while flashing {section.name} ({tempPtr} to {tempPtr + block_size})")        
                 return E_NOT_OK
         
         #Request transfer exit
         try:
             self.client.request_transfer_exit()
-            logging.debug(f"!!!Transfer {section.name} exited!!!")    
+            logging.info(f"!!!Transfer {section.name} exited!!!")    
         except Exception as e:
-            logging.debug(f"{e}")
-            logging.debug(f"Error while exiting transfer {section.name}")        
+            logging.info(f"{e}")
+            logging.info(f"Error while exiting transfer {section.name}")        
             return E_NOT_OK
 
         #validate the {section.name}
-        logging.debug(f"Validating flashing {section.name} from {section.start_address} to {section.end_address}")
+        logging.info(f"Validating flashing {section.name} from {section.start_address} to {section.end_address}")
         ReqData = self.hex2bytes(section.start_address) + self.hex2bytes(section.end_address) + self.caculateChecksum(fileContent)
         try:
             response = self.client.start_routine(0xFF01, ReqData)
-            logging.debug(f"Flashing {section.name} validated")
+            logging.info(f"Flashing {section.name} validated")
         except Exception as e:
-            logging.debug(f"{e}")
-            logging.debug(f"{section.name} validation encounters errors")
+            logging.info(f"{e}")
+            logging.info(f"{section.name} validation encounters errors")
             return E_NOT_OK
 
     def resetSoftware(self):
-        logging.debug(f"Flashing completed, resetting the ECU...")
+        logging.info(f"Flashing completed, resetting the ECU...")
         try: 
             self.client.ecu_reset(HARDRESET)
             return E_OK
         except Exception as e:
-            logging.debug(f"{e}")
-            logging.debug(f"Cannot reset ECU")
+            logging.info(f"{e}")
+            logging.info(f"Cannot reset ECU")
             return E_NOT_OK
 
     def flash(self):
@@ -217,13 +217,13 @@ class Flash:
         retVal_u8 = self.unlockECU(self.client)
 
         if retVal_u8 == E_NOT_OK:
-            logging.debug("Not able to unlock ECU...")
+            logging.info("Not able to unlock ECU...")
             return E_NOT_OK
             
         for section in self.flash_sections:
             retVal_u8 = self.flashSection(section)
             if retVal_u8 == E_NOT_OK:
-                logging.debug("FATAL ERROR WHILE FLASHING {section}")
+                logging.info("FATAL ERROR WHILE FLASHING {section}")
                 return E_NOT_OK
 
         return E_OK
@@ -233,7 +233,7 @@ class Flash:
         if flash_status == E_OK:
             ecuResetStatus = self.resetSoftware(self.client)
             if ecuResetStatus == E_OK:
-                logging.debug(f"Flashing completed with success.")
+                logging.info(f"Flashing completed with success.")
         else:
-            logging.debug(f"Flashing unsuccessful with error, please see the logs above...")
+            logging.info(f"Flashing unsuccessful with error, please see the logs above...")
         return E_NOT_OK

@@ -5,7 +5,7 @@ import logging
 if __name__ == "__main__":
     #Config for logging 
     logging.basicConfig(
-        level    = logging.DEBUG,
+        level    = logging.INFO,
         format   = '[%(asctime)s] - %(levelname)-8s : %(message)s',
         handlers = [
             logging.FileHandler('./FlashSequence/project.log'),
@@ -22,7 +22,7 @@ if __name__ == "__main__":
     flash_status    = flash_obj.run()
 
     if flash_status   == E_OK:
-        logging.debug("!!!Flash completed successfully!!!")
+        logging.info("!!!Flash completed successfully!!!")
     del flash_obj
     
 

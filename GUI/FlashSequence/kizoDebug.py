@@ -5,24 +5,42 @@ DEBUG    = 1
 INFO     = 2
 WARNING  = 3
 ERROR    = 4
-CRITICAL = 5
 
+#flag is used to indicate whether is at debugging phase
+IS_DEBUGGING = False 
 
-DEBUG_LEVEL = DEBUG 
-
+# This function is used to print message 
 def print_debug(message, level=1):
-    if level >= DEBUG_LEVEL:
-        now = datetime.now()
-        print(f"[{now:%H:%M:%S}]: {message}")
-
+    now = datetime.now()
+    if level == ERROR:
+        print(f"[{now:%H:%M:%S}]:  ERROR  : {message}")
+    elif level == WARNING:
+        print(f"[{now:%H:%M:%S}]:  WARNING: {message}")
+    elif level == INFO:
+        print(f"[{now:%H:%M:%S}]:  {message}")
+    elif IS_DEBUGGING == True: 
+        print(f"[{now:%H:%M:%S}]:  {message}")
+        
+# This function is used to write message to log file 
 def debug_write_to_file(message, level=1):
-    if level >= DEBUG_LEVEL:
-        now = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-        dir_path = "/home/fbf/FBF_FOTA_Group3CaseStudy2/GUI"
-        logfile_name = "%s/%s.txt" % (dir_path, now)
-        with open(logfile_name, 'a') as file:
-            file.write(message + '\n')
+    now = datetime.now().strftime("%Y%m%d_%H")
+    dir_path = "/home/fbf/FBF_FOTA_Group3CaseStudy2/GUI/Logs"
+    logfile_name = "%s/%s_log.log" % (dir_path, now)
+    with open(logfile_name, 'a') as file:
+        if level == ERROR:
+            logging_content = f"[{now:%H:%M:%S}]:  ERROR  : {message}"
+            file.write(logging_content + '\n')
+        elif level == WARNING:
+            logging_content = f"[{now:%H:%M:%S}]:  WARNING: {message}"
+            file.write(logging_content + '\n')
+        elif level == INFO:
+            logging_content = f"[{now:%H:%M:%S}]:  {message}"
+            file.write(logging_content + '\n')
+        elif IS_DEBUGGING == True:
+            logging_content = f"[{now:%H:%M:%S}]:  {message}"
+            file.write(logging_content + '\n')
             
+# This function is used to print and write message to log file 
 def print_write_file(message, level=1):
-    print_debug(message, level=1)
-    debug_write_to_file(message, level=1)
+    print_debug(message, level)
+    debug_write_to_file(message, level)

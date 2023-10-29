@@ -57,12 +57,12 @@ if __name__ == "__main__":
             flashResult = FlashBeyondFuture.flash(client, FLASH_USING_BIN_FILE)
             if flashResult == E_OK:
                 FlashBeyondFuture.resetSoftware(client)
-                print_write_file(f"Flash successful...", level = DEBUG)
+                print_write_file(f"Flash successful...", level = INFO)
                 sys.exit(0)
             else:
-                print_write_file(f"Flash unsuccessful hihi, please see the logs above...", level = DEBUG)
+                print_write_file(f"Flash unsuccessful, please see the logs above...", level = INFO)
         except Exception as e:
-            print_write_file(f"Flash unsuccessful, please see the logs above...", level = DEBUG)
+            print_write_file(f"Flash unsuccessful, please see the logs above...", level = INFO)
             sys.exit(1)
 
 

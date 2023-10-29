@@ -120,9 +120,9 @@ class DDIConnection():
     def handleDeployRequest(self):
         feedbackData = {
             "status": {
-                "execution": "resumed",
+                "execution": "closed",
                 "result": {
-                    "finished": 'none'
+                    "finished": 'success',
                 }
             }
         }
@@ -138,14 +138,18 @@ class DDIConnection():
             response = self.getInfo(f"/deploymentBase/{self._delployActionId}").json()
         print(response)
     
+    def getDownloadInfo(self):
+        artifactsData = self.getInfo(f"/deploymentBase/{self._delployActionId}").json()
+        pass
+        
     def downloadArtifacts(self):
         artifactsData = self.getInfo(f"/deploymentBase/{self._delployActionId}").json()
         for artifact in artifactsData["deployment"]["chunks"][0]["artifacts"]:
             print(artifact["filename"])
             response = requests.get(artifact["_links"]["download"]["href"])
-            with open(artifact["filename"], 'wb') as downFile:
+            with open("./FlashSequence/binInput/" + artifact["filename"], 'wb') as downFile:
                 downFile.write(response.content)
-        self.feedback
+        # self.feedback
     
     def getAutoConfirmInfo(self):
         response = self.getInfo(f"/confirmationBase")
@@ -187,12 +191,13 @@ if __name__ == "__main__":
             logging.StreamHandler()
         ]
     )
-    connection1 = DDIConnection("ID2", "623337ab9b71e051e8c52d2816911c8e")
-    connection1.downloadArtifacts()
+    # connection1 = DDIConnection("ID2", "623337ab9b71e051e8c52d2816911c8e")
+    # connection1.downloadArtifacts()
     # connection1.handleCancelRequest()
-    # connection2 = DDIConnection("ID01", "795700dc7ea29dc4b2435631ab217e4d")
-    # connection2.getActionInfo()
-    # connection2.handleDeployRequest()
+    connection2 = DDIConnection("ID01", "795700dc7ea29dc4b2435631ab217e4d")
+    connection2.handleDeployRequest()
+    # connection2.downloadArtifacts()
+    
     # connection2.getAutoConfirmInfo()
     # connection2.handleCancelRequest()
     # result = connection.createNewTarget("ID2", "ID2", "fafba")

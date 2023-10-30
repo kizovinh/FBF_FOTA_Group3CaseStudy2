@@ -1,5 +1,7 @@
+import time
 from datetime import datetime
 import os
+import sys
 
 DEBUG    = 1
 INFO     = 2
@@ -40,8 +42,18 @@ def debug_write_to_file(message, level):
         elif IS_DEBUGGING == True:
             logging_content = f"[{now:%H:%M:%S}]:  {message}"
             file.write(logging_content + '\n')
-            
+
 # This function is used to print and write message to log file 
 def print_write_file(message, level):
     print_debug(message, level)
     debug_write_to_file(message, level)
+    
+# This function is used to print percentage to console 
+def progressBar(message, count_value, total, suffix=''):
+    bar_length = 100
+    filled_up_Length = int(round(bar_length* count_value / float(total)))
+    percentage = round(100.0 * count_value/float(total),1)
+    bar = '=' * filled_up_Length + '-' * (bar_length - filled_up_Length)
+    sys.stdout.write('%s [%s] %s%s ...%s\r' %(message, percentage, bar, '%', suffix))
+    sys.stdout.flush()
+    

@@ -163,21 +163,22 @@ class ECUInfoWidget(QTabWidget):
                 self._downloadBtn = QPushButton("Download")
                 sublayout.addWidget(self._downloadBtn)
                 self._downloadBtn.clicked.connect(self._ecuConnection.downloadArtifacts)
-                if not self._ecuConnection.getDownloadStatus():
+                if not self._ecuConnection.getDownloadStatus() and self._ecuConnection.getFlashStatus():
+                    self._ecuConnection.setFlashStatus(False)
+                elif not self._ecuConnection.getDownloadStatus():
                     self._ecuConnection.downloadArtifacts()
+                    self._downloadBtn.setText("Downloaded")
+                    self._downloadBtn.setEnabled(False)
+                elif not self._ecuConnection.getFlashStatus():
                     flashRet = subprocess.run("./BashScripts/runFlash.sh")
-                    
                     if flashRet.returncode == 0:
                         self._ecuConnection.closeDeployRequest("success")
                         print("Flashing is success")
                     else:
                         self._ecuConnection.closeDeployRequest("failure")
                         print("Flashing is failure")
-                        
-                    self._downloadBtn.setText("Downloaded")
-                    self._downloadBtn.setEnabled(False)
                 else:
-                    self._downloadBtn.setText("Downloaded")
+                    self._downloadBtn.setText("Flashed")
                     self._downloadBtn.setEnabled(False)
                 self.notiLayout.addLayout(sublayout)
             elif self._ecuConnection.getStatus() == "Canceled":

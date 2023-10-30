@@ -1,7 +1,7 @@
 #!/bin/bash
 
 cd ./FlashSequence
-python 3 ./main.py
+python ./main.py
 return_code=$?
 wait
 exit $return_code

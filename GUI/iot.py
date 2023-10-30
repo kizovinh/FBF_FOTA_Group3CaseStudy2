@@ -163,7 +163,6 @@ class DDIConnection():
             with open("./FlashSequence/binInput/" + artifact["filename"], 'wb') as downFile:
                 downFile.write(response.content)
         self._downloaded = True
-        # self.feedback
     
     def getAutoConfirmInfo(self):
         response = self.getInfo(f"/confirmationBase")
@@ -193,9 +192,6 @@ class DDIConnection():
         else:
             return path[actionStartIndex+1:]
     
-
-
-
 if __name__ == "__main__":
     logging.basicConfig(
         level=logging.INFO,
@@ -209,9 +205,8 @@ if __name__ == "__main__":
     # connection1.downloadArtifacts()
     # connection1.handleCancelRequest()
     connection2 = DDIConnection("ID01", "795700dc7ea29dc4b2435631ab217e4d")
-    connection2.handleDeployRequest()
+    connection2.closeDeployRequest("success")
     # connection2.downloadArtifacts()
-    
     # connection2.getAutoConfirmInfo()
     # connection2.handleCancelRequest()
     # result = connection.createNewTarget("ID2", "ID2", "fafba")

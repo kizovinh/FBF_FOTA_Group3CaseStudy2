@@ -41,54 +41,53 @@ from datetime import datetime
 import os
 import sys
 import json
-import threading
-import logging
 
 __version__ = "1.0"
 
 class GatewayWindow(QMainWindow):
-    _updateTime = 10000
-    config_path = "device.json"
-    nullECU = {'name': None, 'type': None, 
+    UPDATE_TIMER = 30000
+    CONFIG_PATH = "Resources/device.json"
+    NULL_ECU = {'name': None, 
+               'type': None, 
                'can_config': {'rx_id': None, 'tx_id': None}, 
                'server_config': {'device_id': None, 'token': None}, 
                "sw_info": {
                     "name": None,
                     "version": None,
-                    "last_updated": None
-            }}
+                    "last_updated": None}
+               }
+    
     def __init__(self):
         super().__init__()
         self._ecuList = []
-        self._ecuConnectionList = []
-        self.setWindowTitle(f"FOTA v{__version__}")
-        self.setWindowIcon(QIcon("fota.png"))
+        self._ecuConnectionList: list[DDIConnection] = []
+        self.setWindowTitle(f"FOTA verison {__version__}")
+        self.setWindowIcon(QIcon("Resources/fota.png"))
         self.timerUpdate = QTimer(self)
-        self.timerUpdate.setInterval(self._updateTime)
+        self.timerUpdate.setInterval(self.UPDATE_TIMER)
         
         self._mainSplitter = QSplitter(Qt.Orientation.Vertical, self)
         self._loadLatestConfig()
-        self._addECUList()
-        self._addECUInfo()
-        self._addConnection()
+        self.addECUListWidget()
+        self.addECUInfoWidget()
+        self.addConnection()
         self.timerUpdate.start()
         
         self.setCentralWidget(self._mainSplitter)
-        # self.setLayout(self._mainlayout)
     
-    def _addECUList(self):
+    def addECUListWidget(self):
         self._ecuListWidget = ECUListWidget("MY DEVICE", self._ecuList, self._ecuConnectionList)
         self._mainSplitter.addWidget(self._ecuListWidget)
         
-    def _addECUInfo(self):
-        self._ecuInfoWidget = ECUInfoWidget(self._ecuList[0], )
+    def addECUInfoWidget(self):
+        self._ecuInfoWidget = ECUInfoWidget(self._ecuList[0], self._ecuConnectionList[0])
         self._mainSplitter.addWidget(self._ecuInfoWidget)
     
-    def _addConnection(self):
+    def addConnection(self):
         self._ecuListWidget.ecuListWidget.currentRowChanged.connect(self._updateInfoView)
-        self.timerUpdate.timeout.connect(self._updateInfoCyclic)
+        self.timerUpdate.timeout.connect(self.updateInfoCyclic)
         
-    def _updateInfoCyclic(self):
+    def updateInfoCyclic(self):
         index = self._ecuListWidget.ecuListWidget.currentRow()
         if index != -1:
             self._ecuConnectionList[index].pollUpdate()
@@ -98,12 +97,12 @@ class GatewayWindow(QMainWindow):
         if index != -1 and index < len(self._ecuList):
             self._ecuInfoWidget.updateView(self._ecuList[index], self._ecuConnectionList[index])
         else:
-            self._ecuInfoWidget.updateView(self.nullECU, None)
+            self._ecuInfoWidget.updateView(self.NULL_ECU, None)
         
     def _loadLatestConfig(self):
-        if not os.path.exists(self.config_path):
+        if not os.path.exists(self.CONFIG_PATH):
             return
-        with open(self.config_path, 'r') as cfgFile:
+        with open(self.CONFIG_PATH, 'r') as cfgFile:
             configData = json.load(cfgFile)
             self._ecuList = configData["ecu_list"]
         for ecuData in self._ecuList:
@@ -111,13 +110,6 @@ class GatewayWindow(QMainWindow):
                 self._ecuConnectionList.append(DDIConnection(ecuData["server_config"]["device_id"], ecuData["server_config"]["token"]))
             else:
                 self._ecuConnectionList.append(None)
-    
-    def _createConsolelog(self):
-        pass
-    
-    def addUpdateInfo(self):
-        pass
-
 
 class ECUInfoWidget(QTabWidget):
 
@@ -148,7 +140,6 @@ class ECUInfoWidget(QTabWidget):
         self.updateNotification()
     
     def clearLayout(self, layout: QLayout):
-        print(layout.count())
         for i in reversed(range(layout.count())): 
             layoutItem = layout.itemAt(i)
             if layoutItem.widget() is not None:
@@ -174,16 +165,13 @@ class ECUInfoWidget(QTabWidget):
                 if not self._ecuConnection.getDownloadStatus():
                     self._ecuConnection.downloadArtifacts()
                     flashRet = subprocess.run("./BashScripts/runFlash.sh")
-                    # Flashing code #
-                    #flashProcess = subprocess.Popen(["lxterminal", "-e", "python", "./FlashSequence/main.py"]) #"./runFlash.sh"])
-                    #returncode = flashProcess.wait()
                     
                     if flashRet.returncode == 0:
                         self._ecuConnection.closeDeployRequest("success")
-                        print("success")
+                        print("Flashing is success")
                     else:
                         self._ecuConnection.closeDeployRequest("failure")
-                        print("failure")
+                        print("Flashing is failure")
                         
                     self._downloadBtn.setText("Downloaded")
                     self._downloadBtn.setEnabled(False)
@@ -278,7 +266,7 @@ class ECUListWidget(QWidget):
         
         self.addBtn = QToolButton()
         self.addBtn.setAutoRaise(True)
-        self.addBtn.setIcon(QIcon("add.svg"))
+        self.addBtn.setIcon(QIcon("Resources/add.svg"))
         self.addBtn.clicked.connect(self._addNewECU)
         self.addBtn.setShortcut(QKeySequence.StandardKey.New)
         self.addBtn.setToolTip("Add new connected ECU")
@@ -286,7 +274,7 @@ class ECUListWidget(QWidget):
         
         self.deleteBtn = QToolButton()
         self.deleteBtn.setAutoRaise(True)
-        self.deleteBtn.setIcon(QIcon("delete.png"))
+        self.deleteBtn.setIcon(QIcon("Resources/delete.png"))
         self.deleteBtn.clicked.connect(self._deleteSelectedECU)
         self.deleteBtn.setShortcut(QKeySequence.StandardKey.Delete)
         self.deleteBtn.setToolTip("Delete ECU")
@@ -294,7 +282,7 @@ class ECUListWidget(QWidget):
         
         self.refreshBtn = QToolButton()
         self.refreshBtn.setAutoRaise(True)
-        self.refreshBtn.setIcon(QIcon("refresh.png"))
+        self.refreshBtn.setIcon(QIcon("Resources/refresh.png"))
         self.refreshBtn.clicked.connect(self._refreshECU)
         self.refreshBtn.setShortcut(QKeySequence.StandardKey.Refresh)
         self.refreshBtn.setToolTip("Refresh the ECUs status")
@@ -303,6 +291,7 @@ class ECUListWidget(QWidget):
         
     def _addECUList(self):
         self.ecuListWidget = QListWidget(self)
+        self.ecuListWidget.setCurrentRow(0)
         for ecuinfo in self._ecuList:
             self.ecuListWidget.addItem(ecuinfo["name"])
         self._mainLayout.addWidget(self.ecuListWidget)

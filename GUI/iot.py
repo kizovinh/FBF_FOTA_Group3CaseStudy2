@@ -158,7 +158,7 @@ class DDIConnection():
     def downloadArtifacts(self):
         artifactsData = self.getInfo(f"/deploymentBase/{self._delployActionId}").json()
         for artifact in artifactsData["deployment"]["chunks"][0]["artifacts"]:
-            print(artifact["filename"])
+            print(f"Downloading {artifact['filename']}")
             response = requests.get(artifact["_links"]["download"]["href"])
             with open("./FlashSequence/binInput/" + artifact["filename"], 'wb') as downFile:
                 downFile.write(response.content)

@@ -233,13 +233,13 @@ def flash(client: Client, flashMode = FLASH_USING_SINGLE_HEX_FILE):
         asw1FilePath = "./binInput/input.hex"
         ds0FilePath  = "./binInput/input.hex"
     elif flashMode == FLASH_USING_BIN_FILE:
-        asw0FilePath = "./binInput/Old/asw0_notCompressed.bin" 
-        asw1FilePath = "./binInput/Old/asw1_notCompressed.bin" 
-        ds0FilePath  = "./binInput/Old/ds0_notCompressed.bin" 
+        asw0FilePath = "./binInput/asw0.bin" 
+        asw1FilePath = "./binInput/asw1.bin" 
+        ds0FilePath  = "./binInput/ds0.bin" 
     elif flashMode == FLASH_USING_COMPRESSED_BIN_FILE:
-        asw0FilePath = "./binInput/asw0.bin"
-        asw1FilePath = "./binInput/asw1.bin"
-        ds0FilePath  = "./binInput/ds0.bin"
+        asw0FilePath = "./binInput/asw0_compressed.bin"
+        asw1FilePath = "./binInput/asw1_compressed.bin"
+        ds0FilePath  = "./binInput/ds0_compressed.bin"
         
     print_write_file(f"Required configuration completed", level = INFO)
     print_write_file(f"Start flashing sequence..", level = INFO)

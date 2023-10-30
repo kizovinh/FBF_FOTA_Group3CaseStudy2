@@ -58,11 +58,13 @@ if __name__ == "__main__":
             if flashResult == E_OK:
                 FlashBeyondFuture.resetSoftware(client)
                 print_write_file(f"Flash successful...", level = INFO)
+                print_debug("Press any key to exit...", level = FINAl)
                 sys.exit(0)
             else:
-                print_write_file(f"Flash unsuccessful, please see the logs above...", level = INFO)
+                print_write_file(f"Flash successful with ECU hasn't reset yet...", level = WARNING)
         except Exception as e:
             print_write_file(f"Flash unsuccessful, please see the logs above...", level = INFO)
+            print_debug("Press any key to exit...")
             sys.exit(1)
 
 

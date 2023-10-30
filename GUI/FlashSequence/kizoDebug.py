@@ -7,6 +7,7 @@ DEBUG    = 1
 INFO     = 2
 WARNING  = 3
 ERROR    = 4
+FINAl    = 5
 
 #flag is used to indicate whether is at debugging phase
 IS_DEBUGGING = False 
@@ -22,6 +23,8 @@ def print_debug(message, level):
         print(f"[{now:%H:%M:%S}]:  {message}")
     elif IS_DEBUGGING == True: 
         print(f"[{now:%H:%M:%S}]:  {message}")
+    elif level == FINAl: 
+        dummy = input(f"{message}")
         
 # This function is used to write message to log file 
 def debug_write_to_file(message, level):

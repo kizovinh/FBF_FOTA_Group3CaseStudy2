@@ -164,13 +164,11 @@ def flashSection(client: Client, section: CodeSection, flashMode, filePath):
         try:
             response = client.transfer_data(blkId & 0xFF, fileContent[tempPtr : tempPtr + block_size])
             tempPtr += block_size
-            # Calculate % flashed with gap 
-            # flashing_percentage = 100 - float(tempPtr/binFileSize)*100 #flashing_percentage if ((100 - float(tempPtr/binFileSize) - flashing_percentage) < 2) else 100 - float(tempPtr/binFileSize)
-            # print_debug(f"{section.name} flashed {flashing_percentage}", level = INFO)
+            # Calculate and display % flashed 
             progressBar(f"{section.name} flashed ", tempPtr, binFileSize)
         except Exception as e:
             print_write_file(f"{e}", level = INFO)
-            print_write_file(f"Error while flashing {section.name} ({tempPtr} to {tempPtr + block_size})", level = ERROR)
+            print_write_file(f"Error while flashing {section.name} from ({tempPtr} to {tempPtr + block_size})", level = ERROR)
             return E_NOT_OK
     
     print_write_file("\n", level = INFO)

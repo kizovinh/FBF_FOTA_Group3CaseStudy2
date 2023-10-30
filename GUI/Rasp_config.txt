@@ -1,0 +1,8 @@
+Spi - Can configuration:
+- dmesg | grep -i mcp : check whether connection with MCP2515 success or not
+- sudo ip link set can0 up type can bitrate 500000 sample-point 0.7 : this is used to configure can driver
+- sudo ifconfig can0 txqueuelen 10000 : configure cantp's buffer 
+- sudo nano /boot/config.txt : can be used to configure spi connection at start up 
+
+Raspberry shortcut usage:
+- sudo nano /etc/xdg/autostart/display.desktop : to call a program with UI run at start up

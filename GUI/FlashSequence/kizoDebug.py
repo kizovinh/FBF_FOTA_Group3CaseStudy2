@@ -50,10 +50,10 @@ def print_write_file(message, level):
     
 # This function is used to print percentage to console 
 def progressBar(message, count_value, total, suffix=''):
-    bar_length = 100
+    bar_length = 60
     filled_up_Length = int(round(bar_length* count_value / float(total)))
     percentage = round(100.0 * count_value/float(total),1)
     bar = '=' * filled_up_Length + '-' * (bar_length - filled_up_Length)
-    sys.stdout.write('%s [%s] %s%s ...%s\r' %(message, percentage, bar, '%', suffix))
+    sys.stdout.write('%s [%s%s] %s%s ...%s\r' %(message, percentage, '%', bar,  suffix))
     sys.stdout.flush()
     

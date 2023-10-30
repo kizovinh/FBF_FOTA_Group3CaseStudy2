@@ -2,4 +2,6 @@
 *.vscode*
 *env*
 *Env*
+GUI/Logs/
 test.py
+

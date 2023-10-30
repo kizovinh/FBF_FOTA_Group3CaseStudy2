@@ -173,7 +173,7 @@ class ECUInfoWidget(QTabWidget):
                 self._downloadBtn.clicked.connect(self._ecuConnection.downloadArtifacts)
                 if not self._ecuConnection.getDownloadStatus():
                     self._ecuConnection.downloadArtifacts()
-                    flashRet = subprocess.run("./runFlash.sh")
+                    flashRet = subprocess.run("./BashScripts/runFlash.sh")
                     # Flashing code #
                     #flashProcess = subprocess.Popen(["lxterminal", "-e", "python", "./FlashSequence/main.py"]) #"./runFlash.sh"])
                     #returncode = flashProcess.wait()

@@ -118,7 +118,7 @@ def flashSection(client: Client, section: CodeSection, flashMode, filePath):
     
     ####################################   {section.name}    ######################################
     #Erase {section.name}
-    print_write_file(f"Erasing {section.name} from {hex(section.start_address)} to {hex(section.end_address)}...", level = DEBUG)
+    print_write_file(f"Erasing {section.name} from {hex(section.start_address)} to {hex(section.end_address)}...", level = INFO)
     try:
         ReqData = hex2bytes(section.start_address) + hex2bytes(section.end_address)
     except Exception as e:
@@ -141,9 +141,9 @@ def flashSection(client: Client, section: CodeSection, flashMode, filePath):
         response = client.request_download(ReqData)
     except Exception as e:
         print_write_file(f"{e}", level = INFO)
-        print_write_file(f"Requested for download {section.name} unsuccessful!!!", level = ERROR)
+        print_write_file(f"Request for download {section.name} unsuccess!!!", level = ERROR)
         return E_NOT_OK
-    print_write_file(f"Requested for download {section.name} successful!!!", level = INFO)
+    print_write_file(f"Request for download {section.name} success!!!", level = INFO)
     
     #Transfer Data
     print_write_file(f"Start flashing {section.name}...", level = INFO)
@@ -173,6 +173,7 @@ def flashSection(client: Client, section: CodeSection, flashMode, filePath):
             print_write_file(f"Error while flashing {section.name} ({tempPtr} to {tempPtr + block_size})", level = ERROR)
             return E_NOT_OK
     
+    print_write_file("\n", level = INFO)
     print_write_file(f"{section.name} flashed successfully!", level = INFO)
     #Request transfer exit
     try:
@@ -184,7 +185,7 @@ def flashSection(client: Client, section: CodeSection, flashMode, filePath):
     print_write_file(f"Transfer {section.name} exited!!!", level = INFO)
 
     #validate the {section.name}
-    print_write_file(f"Validating {section.name} from {section.start_address} to {section.end_address}", level = INFO)
+    print_write_file(f"Validating {section.name} from {hex(section.start_address)} to {hex(section.end_address)}", level = INFO)
     try:
         ReqData = hex2bytes(section.start_address) + hex2bytes(section.end_address) + rtn_chksum(fileContent)
     except Exception as e:
@@ -234,9 +235,9 @@ def flash(client: Client, flashMode = FLASH_USING_SINGLE_HEX_FILE):
         asw1FilePath = "./binInput/input.hex"
         ds0FilePath  = "./binInput/input.hex"
     elif flashMode == FLASH_USING_BIN_FILE:
-        asw0FilePath = "./FlashSequence/binInput/Old/asw0_notCompressed.bin"
-        asw1FilePath = "./FlashSequence/binInput/Old/asw1_notCompressed.bin"
-        ds0FilePath  = "./FlashSequence/binInput/Old/ds0_notCompressed.bin"
+        asw0FilePath = "./binInput/Old/asw0_notCompressed.bin" 
+        asw1FilePath = "./binInput/Old/asw1_notCompressed.bin" 
+        ds0FilePath  = "./binInput/Old/ds0_notCompressed.bin" 
     elif flashMode == FLASH_USING_COMPRESSED_BIN_FILE:
         asw0FilePath = "./binInput/asw0.bin"
         asw1FilePath = "./binInput/asw1.bin"
@@ -245,6 +246,7 @@ def flash(client: Client, flashMode = FLASH_USING_SINGLE_HEX_FILE):
     print_write_file(f"Required configuration completed", level = INFO)
     print_write_file(f"Start flashing sequence..", level = INFO)
     print_write_file(f"        ", level = INFO)
+    
     retVal_u8 = flashSection(client, oAsw0, flashMode, asw0FilePath)
     if retVal_u8 == E_NOT_OK:
         print_write_file("FATAL ERROR WHILE FLASHING ASW0", level=ERROR)

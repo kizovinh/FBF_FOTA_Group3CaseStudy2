@@ -39,7 +39,7 @@ class DDIConnection():
         self._token: str = token
         self._status: str = "idle"
         self._downloaded = False
-        self._flashed = False
+        self._flashed = True
         self.pollUpdate()
     
     def getInfo(self, path=""):
@@ -130,7 +130,7 @@ class DDIConnection():
         }
         response = self.postInfo(path=f"/deploymentBase/{self._delployActionId}/feedback", feedback=feedbackData)
         self._downloaded = False
-        self._flashed = False
+        self._flashed = True
         print(response.text)
     
     def getActionInfo(self):
@@ -152,8 +152,8 @@ class DDIConnection():
     def getFlashStatus(self):
         return self._flashed
     
-    def setFlashStatus(self, status:bool):
-        self._flashed = status
+    def setFlashStatus(self, status: bool):
+        return self._flashed
         
     def downloadArtifacts(self):
         artifactsData = self.getInfo(f"/deploymentBase/{self._delployActionId}").json()
@@ -163,6 +163,7 @@ class DDIConnection():
             with open("./FlashSequence/binInput/" + artifact["filename"], 'wb') as downFile:
                 downFile.write(response.content)
         self._downloaded = True
+        self._flashed = False
     
     def getAutoConfirmInfo(self):
         response = self.getInfo(f"/confirmationBase")

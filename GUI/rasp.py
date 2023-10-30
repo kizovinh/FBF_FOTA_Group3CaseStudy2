@@ -67,7 +67,7 @@ class GatewayWindow(QMainWindow):
         self.timerUpdate.setInterval(self.UPDATE_TIMER)
         
         self._mainSplitter = QSplitter(Qt.Orientation.Vertical, self)
-        self._loadLatestConfig()
+        self.loadInitConfig()
         self.addECUListWidget()
         self.addECUInfoWidget()
         self.addConnection()
@@ -99,15 +99,16 @@ class GatewayWindow(QMainWindow):
         else:
             self._ecuInfoWidget.updateView(self.NULL_ECU, None)
         
-    def _loadLatestConfig(self):
+    def loadInitConfig(self):
         if not os.path.exists(self.CONFIG_PATH):
             return
         with open(self.CONFIG_PATH, 'r') as cfgFile:
             configData = json.load(cfgFile)
             self._ecuList = configData["ecu_list"]
-        for ecuData in self._ecuList:
+        for index, ecuData in enumerate(self._ecuList):
             if ecuData["server_config"]["device_id"] is not None:
                 self._ecuConnectionList.append(DDIConnection(ecuData["server_config"]["device_id"], ecuData["server_config"]["token"]))
+                self._ecuConnectionList[index].pollUpdate()
             else:
                 self._ecuConnectionList.append(None)
 
@@ -199,7 +200,10 @@ class ECUInfoWidget(QTabWidget):
         self.generalInfoWidget = QWidget()
         layout = QVBoxLayout()
         self.nameLabel = QLabel(f"Name: {self._ecuInfo['name']}")
-        self.statusLabel = QLabel(f"Status: unknown")
+        if self._ecuConnection is None:
+            self.statusLabel = QLabel(f"Status: unknown")
+        else:
+            self.statusLabel = QLabel(f"Status: {self._ecuConnection.getStatus()}")
         self.typeLabel = QLabel(f"Type: {self._ecuInfo['type']}")
         self.swNameLabel = QLabel(f"SW Name: {self._ecuInfo['sw_info']['name']}")
         self.swVersionLabel = QLabel(f"SW Version: {self._ecuInfo['sw_info']['version']}")

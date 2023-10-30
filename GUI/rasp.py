@@ -296,9 +296,9 @@ class ECUListWidget(QWidget):
         
     def _addECUList(self):
         self.ecuListWidget = QListWidget(self)
-        self.ecuListWidget.setCurrentRow(0)
         for ecuinfo in self._ecuList:
             self.ecuListWidget.addItem(ecuinfo["name"])
+        self.ecuListWidget.setCurrentRow(0)
         self._mainLayout.addWidget(self.ecuListWidget)
     
     def _deleteSelectedECU(self):

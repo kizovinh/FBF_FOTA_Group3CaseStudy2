@@ -153,7 +153,7 @@ class DDIConnection():
         return self._flashed
     
     def setFlashStatus(self, status: bool):
-        return self._flashed
+        self._flashed = status
         
     def downloadArtifacts(self):
         artifactsData = self.getInfo(f"/deploymentBase/{self._delployActionId}").json()
